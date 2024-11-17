@@ -17,6 +17,12 @@ $ cp .env.sample .env
 $ docker-compose build
 ```
 
+### Open in Dev Container
+
+1. Open in your VSCode
+2. Open "Command Palette" (Ctrl + Shift + P)
+2. Select "Dev Containers: Reopen in Container"
+
 ### Start Docker Compose
 
 ```bash
