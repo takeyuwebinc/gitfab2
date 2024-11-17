@@ -1,0 +1,5 @@
+name: "gitfab2"
+
+services:
+  app:
+    command: sleep infinity
