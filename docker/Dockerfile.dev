@@ -1,26 +1,6 @@
 FROM ruby:2.6.6
 
 ENV LANG C.UTF-8
-ENV ENTRYKIT_VERSION 0.4.0
-
-RUN apt-get update -qq \
-  && apt-get install -y golang
-
-RUN wget -O entrykit.tar.gz https://github.com/progrium/entrykit/archive/v${ENTRYKIT_VERSION}.tar.gz \
-  && tar -zxvf entrykit.tar.gz \
-  && rm entrykit.tar.gz \
-  && cd entrykit-${ENTRYKIT_VERSION} \
-  && go mod init go-tools \
-  && go mod tidy \
-  && go build ./... \
-  && go build -a -installsuffix cgo -ldflags "-X main.Version=${ENTRYKIT_VERSION}" -o entrykit ./cmd \
-  && mv entrykit /bin/entrykit \
-  && chmod +x /bin/entrykit \
-  && entrykit --symlink \
-  && cd .. \
-  && rm -rf entrykit-${ENTRYKIT_VERSION} \
-  && apt-get remove --purge -y golang \
-  && apt-get -y autoremove
 
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
   && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
@@ -46,9 +26,4 @@ ENV BUNDLE_PATH vendor/bundle
 RUN bundle config --global retry 5 \
   && bundle config --global path vendor/bundle
 
-ENTRYPOINT [ \
-  "prehook", \
-  "ruby -v",\
-  "npm install", \
-  "bundle install", "--" \
-  ]
+ENTRYPOINT [ "/src/docker/docker-entrypoint.sh" ]
