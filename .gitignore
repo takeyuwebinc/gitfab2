@@ -56,3 +56,5 @@ gemfiles/*.lock
 public/javascripts/dist/
 
 /config/certs/*
+
+/.kamal/secrets-common
