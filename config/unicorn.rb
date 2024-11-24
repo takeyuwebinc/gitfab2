@@ -3,17 +3,20 @@ workers_procs = { production: 5, staging: 2 }
 workers_procs.default = 2
 worker_processes workers_procs[rails_env.to_sym]
 
-app_directory = '/usr/local/rails_apps/gitfab2/current'
+app_directory = ENV.fetch('WORKDIR') { '/usr/local/rails_apps/gitfab2/current' }
 working_directory app_directory # available in 0.94.0+
 
-listen '/tmp/unicorn_gitfab2.sock', backlog: 128
+listen_address = ENV.fetch('LISTEN_ADDRESS') { '/tmp/unicorn_gitfab2.sock' }
+listen listen_address, backlog: 128
 
 timeout 3000
 
-pid '/tmp/unicorn_gitfab2.pid'
+pid ENV.fetch('PID') { '/tmp/unicorn_gitfab2.pid' }
 
-stderr_path "#{app_directory}/log/unicorn_#{rails_env}.log"
-stdout_path "#{app_directory}/log/unicorn_#{rails_env}.log"
+unless ENV['RAILS_LOG_TO_STDOUT']
+  stderr_path "#{app_directory}/log/unicorn_#{rails_env}.log"
+  stdout_path "#{app_directory}/log/unicorn_#{rails_env}.log"
+end
 
 preload_app true
 GC.respond_to?(:copy_on_write_friendly=) and
