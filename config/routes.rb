@@ -3,6 +3,8 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
   end
 
+  get '/up' => 'health#show'
+
   get 'about', to: 'static_pages#about'
   get 'terms', to: 'static_pages#terms'
   get 'privacy', to: 'static_pages#privacy'
