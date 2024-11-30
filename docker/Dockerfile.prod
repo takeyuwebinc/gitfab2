@@ -9,6 +9,7 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
     nodejs vim \
     povray povray-includes \
     imagemagick \
+    cron sudo \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -68,7 +69,8 @@ RUN groupadd --gid $USER_GID $USERNAME && \
     useradd -m --shell /bin/bash --uid $USER_UID --gid $USER_GID $USERNAME && \
     mkdir public/uploads && \
     chown -R $USERNAME:$USERNAME db log tmp public/uploads
-USER $USERNAME:$USERNAME
+
+#USER $USERNAME:$USERNAME
 
 EXPOSE 3000
-CMD ["bundle", "exec", "unicorn_rails", "-c", "config/unicorn.rb"]
+#CMD ["bundle", "exec", "unicorn_rails", "-c", "config/unicorn.rb"]
