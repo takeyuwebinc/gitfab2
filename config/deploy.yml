@@ -61,6 +61,7 @@ env:
     TZ: "Asia/Tokyo"
     DB_HOST: gitfab2-db
     DB_USER: root
+    TERM: linux
   secret:
     - DB_PASSWORD
     - GITHUB_APP_ID
