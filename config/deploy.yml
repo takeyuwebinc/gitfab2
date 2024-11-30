@@ -25,6 +25,13 @@ proxy:
   healthcheck:
     path: /up
   forward_headers: true
+  response_timeout: 3000
+  buffering:
+      requests: true
+      responses: true
+      max_request_body: 5_000_000
+      max_response_body: 0
+      memory: 1_000_000
 
 # Credentials for your image host.
 registry:
