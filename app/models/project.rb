@@ -67,10 +67,7 @@ class Project < ApplicationRecord
 
   scope :active, -> { where(is_deleted: false) }
   scope :exclude_blacklisted, -> { where.not(id: BlackList.select(:project_id)) }
-  scope :noted, -> do
-    note_cards_sql = Card::NoteCard.select(:id).group(:project_id).having("COUNT(id) > 0")
-    joins(:note_cards).where(cards: { id: note_cards_sql })
-  end
+  scope :noted, -> { joins(:note_cards).where.not(cards: { id: nil }) }
   scope :ordered_by_owner, -> { order(:owner_id) }
   scope :published, -> { active.where(is_private: false) }
 
