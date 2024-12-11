@@ -7,6 +7,7 @@ require 'rails/all'
 Bundler.require(*Rails.groups)
 
 require_relative "../lib/middlewares/jp_only"
+require_relative "../lib/middlewares/maintenance_mode"
 
 module Gitfab2
   class Application < Rails::Application
@@ -22,5 +23,6 @@ module Gitfab2
     # the framework and any gems in your application.
 
     config.middleware.insert 0, JpOnly
+    config.middleware.insert 0, MaintenanceMode
   end
 end
