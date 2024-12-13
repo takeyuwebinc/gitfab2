@@ -6,6 +6,8 @@ require "zlib"
 
 class JpOnly
   class GeoLite2
+    class UpdateError < StandardError; end
+
     def initialize
       @mutex = Mutex.new
     end
@@ -65,8 +67,9 @@ class JpOnly
       # ユーザー名とパスワード
       account_id = ENV["MAXMIND_ACCOUNT_ID"]
       license_key = ENV["MAXMIND_LICENSE_KEY"]
-      raise "Missing MAXMIND_ACCOUNT_ID" unless account_id.present?
-      raise "Missing MAXMIND_LICENSE_KEY" unless license_key.present?
+      raise UpdateError.new("Missing MAXMIND_ACCOUNT_ID") unless account_id.present?
+      raise UpdateError.new("Missing MAXMIND_LICENSE_KEY") unless license_key.present?
+      raise UpdateError.new("test")
   
       # ダウンロードして一時的に保存
       download_file(db_url, temp_file_path, account_id, license_key)
@@ -93,7 +96,7 @@ class JpOnly
           end
         end
       else
-        raise "Downloaded file is corrupted."
+        raise UpdateError.new("Downloaded file is corrupted.")
       end
       nil
     ensure
@@ -150,5 +153,8 @@ class JpOnly
 
   def geolite2db
     JpOnly::GeoLite2.new.db
+  rescue JpOnly::GeoLite2::UpdateError => e
+    Rails.logger.error(e)
+    nil
   end
 end
