@@ -49,6 +49,61 @@ $ docker-compose run app bundle exec rails db:test:prepare
 $ docker-compose run app bundle exec rspec
 ```
 
+## Build Production Environment
+### Edit Dockerfile.prod
+Midify and run
+```bash
+$ vi config/Dockerfile.prod
+$ docker build -t gitfab2 -f docker/Dockerfile.prod .
+$ docker run -p 3000:3000 -e SECRET_KEY_BASE=xxxxxxxxxx gitfab2
+```
+
+## Deploy with Kamal (over SSH)
+### Setup SSH
+```bash
+$ ssh-keygen -t ed25519
+$ vi ~/.ssh/config
+$ ssh gitfab2.host
+```
+
+```~/.ssh/config
+Host  gitfab2.host
+        HostName 123.456.789.012
+        User deploy
+        Port 22
+        IdentitiesOnly yes
+        IdentityFile ~/.ssh/fabble2024.deploy.id_ed25519
+```
+
+### Install Kamal
+https://kamal-deploy.org/docs/installation/
+
+#### Ubuntu on WSL2
+```~/.bashrc
+if [[ -f ~/.bashrc ]] ; then
+    . ~/.bashrc
+fi
+
+if [ -z "$SSH_AUTH_SOCK" ]; then
+   # Check for a currently running instance of the agent
+   RUNNING_AGENT="`ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]'`"
+   if [ "$RUNNING_AGENT" = "0" ]; then
+        # Launch a new instance of the agent
+        ssh-agent -s &> $HOME/.ssh/ssh-agent
+   fi
+   eval `cat $HOME/.ssh/ssh-agent`
+fi
+
+ssh-add $HOME/.ssh/deploy.id_ed25519
+
+alias kamal='docker run -it --rm -v "${PWD}:/workdir" -v "${SSH_AUTH_SOCK}:/ssh-agent" -v /var/run/docker.sock:/var/run/docker.sock -e "SSH_AUTH_SOCK=/ssh-agent" ghcr.io/basecamp/kamal:latest'
+```
+
+### Deploy
+```bash
+$ kamal deploy
+```
+
 ## License
 
 gitfab2 is released under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).

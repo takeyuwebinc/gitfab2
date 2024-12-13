@@ -1,0 +1,76 @@
+ARG RUBY_VERSION=2.6.6
+FROM ruby:$RUBY_VERSION AS base
+
+ENV LANG=C.UTF-8
+
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+  && apt-get update -qq \
+  && apt-get install --no-install-recommends -y \
+    nodejs vim \
+    povray povray-includes \
+    imagemagick \
+    cron sudo \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG WORKDIR=/app
+RUN mkdir $WORKDIR
+WORKDIR $WORKDIR
+
+# Set production environment
+ENV RAILS_ENV="production" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development test" \
+    RAILS_LOG_TO_STDOUT="1" \
+    LISTEN_ADDRESS=3000 \
+    DISABLE_UNICORN_LOG="1" \
+    PID=${WORKDIR}/tmp/pids/server.pid \
+    WORKDIR=$WORKDIR
+
+ARG GEM_VERSION=3.0.8
+RUN gem update --system $GEM_VERSION
+ARG BUNDLER_VERSION=1.17.3
+RUN gem install bundler -v $BUNDLER_VERSION
+
+# Throw-away build stage to reduce size of final image
+FROM base AS build
+
+RUN apt-get update -qq \
+  && apt-get install --no-install-recommends -y \
+  autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev libcurl4-openssl-dev libxml2-dev \
+  default-mysql-client \
+  && apt-get clean
+
+# Install application gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install && \
+    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
+
+# Copy application code
+COPY . .
+RUN cp config/database.ymls/production.yml config/database.yml
+RUN npm install
+RUN npm run build
+RUN SECRET_KEY_BASE=dummy bundle exec rails assets:precompile
+RUN rm -rf node_modules
+
+# Final stage for app image
+FROM base
+
+# Copy built artifacts: gems, application
+COPY --from=build /usr/local/bundle /usr/local/bundle
+COPY --from=build $WORKDIR $WORKDIR
+
+ARG USERNAME=ruby
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd -m --shell /bin/bash --uid $USER_UID --gid $USER_GID $USERNAME && \
+    mkdir public/uploads && \
+    chown -R $USERNAME:$USERNAME db log tmp public/uploads
+
+#USER $USERNAME:$USERNAME
+
+EXPOSE 3000
+#CMD ["bundle", "exec", "unicorn_rails", "-c", "config/unicorn.rb"]
