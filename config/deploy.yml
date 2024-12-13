@@ -9,11 +9,11 @@ servers:
   web:
     hosts:
       - 160.16.100.129
-    cmd: sudo -E -u deploy bash -c "bundle exec unicorn_rails -c config/unicorn.rb"
+    cmd: sudo -E -H -u deploy bash -c "bundle exec unicorn_rails -c config/unicorn.rb"
   job:
     hosts:
       - 160.16.100.129
-    cmd: sudo -E -u deploy bash -c "bin/delayed_job run"
+    cmd: sudo -E -H -u deploy bash -c "bin/delayed_job run"
     logging:
       driver: syslog
       options:
@@ -25,7 +25,7 @@ servers:
     hosts:
       - 160.16.100.129
     cmd:
-      bash -c "env | grep -v LS_COLOR | awk '{ print \"export \" \$0 }' > /tmp/cron.env.sh; cat config/crontab | crontab - && cron -f"
+      bash -c "env | grep -v HOME | awk '{ print \"export \" \$0 }' > /tmp/cron.env.sh; cat config/crontab | crontab - && cron -f"
     logging:
       driver: syslog
       options:
