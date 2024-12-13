@@ -83,7 +83,6 @@ env:
     DB_HOST: gitfab2-db
     DB_USER: root
     TERM: linux
-    MAINTENANCE_MODE: "true"
   secret:
     - DB_PASSWORD
     - GITHUB_APP_ID
