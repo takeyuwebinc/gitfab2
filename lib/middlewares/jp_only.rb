@@ -135,7 +135,10 @@ class JpOnly
   end
 
   def jp?(remote_ip)
-    reader = MaxMind::DB.new(geolite2db, mode: MaxMind::DB::MODE_MEMORY)
+    db_path = geolite2db
+    return true unless db_path
+
+    reader = MaxMind::DB.new(db_path, mode: MaxMind::DB::MODE_MEMORY)
     record = reader.get(remote_ip)
     if record && record["country"]
       record["country"]["iso_code"] == "JP"
