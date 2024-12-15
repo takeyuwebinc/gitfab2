@@ -22,7 +22,15 @@ describe Backup do
     end
   end
 
+  describe '#create' do
+    it "バックアップを作成すること" do
+      user = create(:user)
+      backup = Backup.new(user)
+      expect { backup.create }.to change { backup.zip_exist? }.from(false).to(true)
+    end
+  end
+
   after(:each) do
-    FileUtils.rm(zip_path, force: true)
+    Backup.delete_old_files(Time.current)
   end
 end
