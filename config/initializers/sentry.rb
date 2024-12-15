@@ -44,3 +44,16 @@ Sentry.init do |config|
       end
     end
 end
+
+ActiveSupport::Notifications.subscribe("deprecation.rails") do |*args|
+  event = ActiveSupport::Notifications::Event.new(*args)
+  message = event.payload[:message]
+  Sentry.capture_message(message, level: :warning)
+end
+
+ActiveSupport::Notifications.subscribe("deprecation.ruby") do |*args|
+  event = ActiveSupport::Notifications::Event.new(*args)
+  message = event.payload[:message]
+  Sentry.capture_message(message, level: :warning)
+end
+
