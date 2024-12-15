@@ -12,7 +12,7 @@ require_relative "../lib/middlewares/maintenance_mode"
 module Gitfab2
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 5.2
+    config.load_defaults 6.0
 
     config.time_zone = 'Tokyo'
     config.active_job.queue_adapter = :delayed_job
