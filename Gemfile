@@ -11,7 +11,6 @@ gem 'bcrypt', require: false
 gem 'bootstrap'
 gem 'cancancan'
 gem 'carrierwave'
-gem 'exception_notification'
 gem 'friendly_id'
 gem 'jb'
 gem 'jbuilder'
@@ -32,7 +31,6 @@ gem 'truncate_html'
 gem 'rubyzip'
 gem 'whenever', require: false
 gem 'delayed_job_active_record'
-gem 'scout_apm'
 gem "maxmind-db"
 
 # Frontend
@@ -47,7 +45,7 @@ gem 'stl', github: 'oshimaryo/stl-ruby'
 gem 'stl2gif', github: 'takeyuwebinc/stl2gif', branch: 'develop'
 gem 'mathn' # Used in geometry gem in stl gem
 
-gem "sentry-raven"
+gem "sentry-rails"
 gem 'activerecord-import'
 
 group :development, :test do
