@@ -224,7 +224,7 @@ class Backup
     def copy_contents
       avatar_dir = json_output_dir.join('user', 'avatar')
       avatar_dir.mkpath
-      FileUtils.copy(user.avatar.file.file, avatar_dir)
+      FileUtils.copy(user.avatar.file.file, avatar_dir) if user.avatar.file
       projects.each do |project|
         copy_project_contents(project)
       end
