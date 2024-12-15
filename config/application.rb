@@ -6,6 +6,7 @@ require 'rails/all'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+require_relative "../lib/core_ext/warning"
 require_relative "../lib/middlewares/jp_only"
 require_relative "../lib/middlewares/maintenance_mode"
 
