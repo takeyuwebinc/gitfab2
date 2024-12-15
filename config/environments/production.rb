@@ -66,8 +66,10 @@ Rails.application.configure do
     address: "172.17.0.1",
     port: 25,
     domain: "fabble.cc",
-    ssl: false,
-    enable_starttls_auto: false
+    # NOTE: 本来発生しないはずのSTARTTLSが発生する不具合があるため、これを無視するワークアラウンド
+    # https://stackoverflow.com/questions/71202804/why-isnt-a-self-signed-smtp-certificate-ignored-by-rails-actionmailer-6-1-rub
+    # また ssl: false を指定すると、この設定が使用されずかつ STARTTLS が発生するため、 ssl: false は指定しない
+    enable_starttls_auto: false,
   }
   config.action_mailer.default_url_options = { host: "fabble.cc", protocol: "https" }
   config.action_mailer.perform_caching = false
