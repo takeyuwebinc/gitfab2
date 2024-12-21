@@ -83,6 +83,7 @@ env:
     DB_HOST: gitfab2-db
     DB_USER: root
     TERM: linux
+    RAILS_SERVE_STATIC_FILES: "true"
   secret:
     - DB_PASSWORD
     - GITHUB_APP_ID
