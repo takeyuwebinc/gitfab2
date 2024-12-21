@@ -29,6 +29,8 @@ RSpec.configure do |config|
   config.include ControllerMacros::InstanceMethods, :type => :controller
   config.include ActiveJob::TestHelper
   config.include ActiveSupport::Testing::TimeHelpers
+  config.include ActionDispatch::TestProcess
+  config.include ActiveSupport::Testing::FileFixtures
 
   config.before(:suite) do
     DatabaseRewinder.clean_all
