@@ -28,9 +28,9 @@ ENV RAILS_ENV="production" \
     PID=${WORKDIR}/tmp/pids/server.pid \
     WORKDIR=$WORKDIR
 
-ENV GEM_VERSION 3.4.21
+ENV GEM_VERSION=3.4.21
 RUN gem update --system $GEM_VERSION
-ENV BUNDLER_VERSION 2.4.22
+ENV BUNDLER_VERSION=2.4.22
 RUN gem install bundler -v $BUNDLER_VERSION
 
 # Throw-away build stage to reduce size of final image
