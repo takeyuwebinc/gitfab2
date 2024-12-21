@@ -30,7 +30,7 @@ FactoryBot.define do
   factory :content_figure, parent: :figure do
     content do
       Rack::Test::UploadedFile.new(
-        Rails.root.join('spec', 'fixtures', 'images', 'figure.png'),
+        Rails.root.join('spec', 'fixtures', 'files', 'images', 'figure.png'),
         'image/png'
       )
     end

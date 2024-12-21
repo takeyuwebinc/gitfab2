@@ -24,7 +24,7 @@
 FactoryBot.define do
   factory :attachment do
     title { 'Attachment' }
-    content { File.open(Rails.root.join('spec', 'fixtures', 'images', 'image.jpg')) }
+    content { File.open(Rails.root.join('spec', 'fixtures', 'files', 'images', 'image.jpg')) }
     association :attachable, factory: :card
   end
 
