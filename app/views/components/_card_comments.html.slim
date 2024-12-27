@@ -7,7 +7,7 @@
       = render "card_comments/comment", comment: comment, i: i
 
   - if current_user && card.persisted?
-    = form_with url: card_card_comments_path(card), html: { class: "comment-form" } do |f|
+    = form_with url: card_card_comments_path(card), html: { class: "comment-form" }, local: false do |f|
       .columns
         .left
           = image_tag current_user.avatar.thumb.url, class: "avatar"
