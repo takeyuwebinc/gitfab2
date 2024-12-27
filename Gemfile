@@ -34,6 +34,7 @@ gem 'whenever', require: false
 gem 'delayed_job_active_record'
 gem "maxmind-db"
 gem "cmath"
+gem "net-http"
 
 # Frontend
 gem 'autoprefixer-rails'
