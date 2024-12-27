@@ -69,7 +69,6 @@ class JpOnly
       license_key = ENV["MAXMIND_LICENSE_KEY"]
       raise UpdateError.new("Missing MAXMIND_ACCOUNT_ID") unless account_id.present?
       raise UpdateError.new("Missing MAXMIND_LICENSE_KEY") unless license_key.present?
-      raise UpdateError.new("test")
   
       # ダウンロードして一時的に保存
       download_file(db_url, temp_file_path, account_id, license_key)
