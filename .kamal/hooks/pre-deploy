@@ -1,0 +1,10 @@
+#!/bin/sh
+
+kamal proxy boot_config set \
+--docker_options \
+  log-driver=syslog \
+  log-opt=syslog-address=udp://127.0.0.1:514 \
+  log-opt=syslog-facility=daemon \
+  log-opt=tag=proxy \
+  log-opt=syslog-format=rfc5424 \
+--log-max-size=""
