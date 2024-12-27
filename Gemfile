@@ -16,6 +16,7 @@ gem 'jb'
 gem 'jbuilder'
 gem 'kaminari'
 gem 'mini_magick', '~> 4.10'
+gem "mimemagic", "~> 0.4.3"
 gem 'mysql2'
 gem 'nested_form'
 gem 'nokogiri'
