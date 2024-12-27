@@ -10,7 +10,7 @@ gem 'acts_as_list'
 gem 'bcrypt', require: false
 gem 'bootstrap'
 gem 'cancancan'
-gem 'carrierwave'
+gem 'carrierwave', '~> 3.0.0'
 gem 'friendly_id'
 gem 'jb'
 gem 'jbuilder'
