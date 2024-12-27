@@ -1,5 +1,4 @@
-# TODO: Ruby 2.7 にしたらコメントを外す
-# Warning[:deprecated] = true
+Warning[:deprecated] = true
 
 module Warning
   alias_method :original_warn, :warn
