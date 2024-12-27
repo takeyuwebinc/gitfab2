@@ -31,7 +31,7 @@ section#basic-informations
             - @project.tags.each do |tag|
               = render "tags/tag", tag: tag
           - if current_user
-            = form_with(scope: :tag, url: project_tags_path(@owner, @project), html: {id: "tag-form"}) do |f|
+            = form_with(scope: :tag, url: project_tags_path(@owner, @project), html: {id: "tag-form"}, local: false) do |f|
               = f.text_field :name, class: "textfield"
               = f.submit "Add", class: "btn"
             = link_to "Add Tag", "#", class: "btn", id: "show-tag-form"
@@ -101,7 +101,7 @@ section#basic-informations
               #collaborators-index
                 h1 Project Owner & Collaborators
                 section
-                  = form_with url: project_collaborations_path(@project.owner, @project), id: "new_collaboration" do |f|
+                  = form_with url: project_collaborations_path(@project.owner, @project), id: "new_collaboration", local: false do |f|
                     = f.select :collaborator_name, []
                     = f.submit "Add", class: "add-collaborator-btn btn"
 
