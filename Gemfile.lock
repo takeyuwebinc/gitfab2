@@ -107,7 +107,7 @@ GEM
     bullet (7.2.0)
       activesupport (>= 3.0.0)
       uniform_notifier (~> 1.11)
-    cancancan (3.0.1)
+    cancancan (3.6.1)
     carrierwave (3.0.7)
       activemodel (>= 6.0.0)
       activesupport (>= 6.0.0)
