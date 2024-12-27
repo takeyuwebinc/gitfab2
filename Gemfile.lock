@@ -113,6 +113,7 @@ GEM
       activesupport (>= 4.0.0)
       mime-types (>= 1.16)
     chronic (0.10.2)
+    cmath (1.0.0)
     coderay (1.1.2)
     coffee-rails (5.0.0)
       coffee-script (>= 2.2.0)
@@ -444,6 +445,7 @@ DEPENDENCIES
   bullet
   cancancan
   carrierwave
+  cmath
   coffee-rails
   coveralls
   daemons

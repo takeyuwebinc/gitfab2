@@ -32,6 +32,7 @@ gem 'rubyzip'
 gem 'whenever', require: false
 gem 'delayed_job_active_record'
 gem "maxmind-db"
+gem "cmath"
 
 # Frontend
 gem 'autoprefixer-rails'
