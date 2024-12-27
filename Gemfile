@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.6.6'
+ruby '2.7.8'
 
 gem 'rails', '~> 6.1'
 
@@ -10,12 +10,13 @@ gem 'acts_as_list'
 gem 'bcrypt', require: false
 gem 'bootstrap'
 gem 'cancancan'
-gem 'carrierwave'
+gem 'carrierwave', '~> 3.0.0'
 gem 'friendly_id'
 gem 'jb'
 gem 'jbuilder'
 gem 'kaminari'
-gem 'mini_magick'
+gem 'mini_magick', '~> 4.10'
+gem "mimemagic", "~> 0.4.3"
 gem 'mysql2'
 gem 'nested_form'
 gem 'nokogiri'
@@ -32,6 +33,8 @@ gem 'rubyzip'
 gem 'whenever', require: false
 gem 'delayed_job_active_record'
 gem "maxmind-db"
+gem "cmath"
+gem "net-http"
 
 # Frontend
 gem 'autoprefixer-rails'

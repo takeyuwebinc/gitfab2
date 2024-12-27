@@ -33,7 +33,8 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   def remove_animation(is_using_play_btn = false)
     manipulate! do |img|
-      if img.mime_type.match /gif/
+      mime_magic = MimeMagic.by_path(img.path)
+      if mime_magic && mime_magic.type.match?(/gif$/)
         img.collapse!
         img = add_play_btn img if is_using_play_btn
       end
