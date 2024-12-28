@@ -3,7 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '2.7.8'
 
-gem 'rails', '~> 6.1'
+gem 'rails', '~> 7.0.0'
 
 gem 'active_decorator'
 gem 'acts_as_list'
