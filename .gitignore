@@ -58,6 +58,3 @@ public/javascripts/dist/
 /config/certs/*
 
 /.kamal/secrets-common
-
-/config/credentials/development.key
-/config/credentials/production.key
