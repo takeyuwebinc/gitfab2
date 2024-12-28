@@ -84,6 +84,7 @@ env:
     DB_USER: root
     TERM: linux
     RAILS_SERVE_STATIC_FILES: "true"
+    RAILS_LOG_LEVEL: debug
   secret:
     - DB_PASSWORD
     - GITHUB_APP_ID

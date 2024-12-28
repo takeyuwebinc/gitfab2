@@ -41,7 +41,6 @@ gem 'autoprefixer-rails'
 gem 'coffee-rails'
 gem 'jquery-rails'
 gem 'sass-rails'
-gem 'uglifier'
 gem 'sprockets', '3.7.2'
 
 gem 'stl', github: 'oshimaryo/stl-ruby'
