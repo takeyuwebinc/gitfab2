@@ -33,7 +33,7 @@ class ProjectsController < ApplicationController
   end
 
   def create
-    @owner = Owner.find_by(params[:project][:owner_id]) || current_user
+    @owner = Owner.find_by(params[:project][:owner_id]) || User.active.find(current_user.id)
     @project = @owner.projects.build(project_params)
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug

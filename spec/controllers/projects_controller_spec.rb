@@ -107,6 +107,14 @@ describe ProjectsController, type: :controller do
           end
           it { is_expected.to render_template :new }
         end
+        context 'without owner_id' do
+          subject { post :create, params: { project: new_project.attributes } }
+          let(:user) { FactoryBot.create :user }
+          let(:new_project) { FactoryBot.build(:user_project, original: nil, owner: nil) }
+          before { sign_in user }
+          it { is_expected.to redirect_to(edit_project_path(id: assigns(:project), owner_name: user)) }
+          it { expect { subject }.to change(Project, :count).by(1) }
+        end
       end
 
       describe 'GET recipe_cards_list' do
