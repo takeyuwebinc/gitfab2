@@ -24,7 +24,8 @@ module Gitfab2
     # config.eager_load_paths << Rails.root.join("extras")
     config.time_zone = 'Tokyo'
     config.active_job.queue_adapter = :delayed_job
-    # config.middleware.insert 0, JpOnly
-    config.middleware.insert 0, MaintenanceMode
+
+    # config.middleware.insert 0, Middlewares::JpOnly
+    config.middleware.insert 0, Middlewares::MaintenanceMode
   end
 end
