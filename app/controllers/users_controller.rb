@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
   layout 'user'
+  before_action :authenticate_user!, only: %i[edit update destroy backup download_backup]
 
   def index
     @users = User.active.order(:name) # TODO: ユーザー名による絞り込み

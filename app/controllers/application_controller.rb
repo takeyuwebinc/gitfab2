@@ -67,4 +67,10 @@ class ApplicationController < ActionController::Base
         params: params.to_unsafe_h,
       )
     end
+
+    def authenticate_user!
+      unless current_user.present?
+        redirect_to sessions_path
+      end
+    end
 end

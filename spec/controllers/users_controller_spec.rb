@@ -113,8 +113,13 @@ describe UsersController, type: :controller do
   describe 'GET edit' do
     subject { get :edit }
     let(:user) { FactoryBot.create(:user) }
-    before { sign_in(user) }
-    it { is_expected.to be_successful }
+    context 'with user signed in' do
+      before { sign_in(user) }
+      it { is_expected.to be_successful }
+    end
+    context 'without user signed in' do
+      it { is_expected.to redirect_to "/sessions" }
+    end
   end
 
   describe 'PATCH update' do
