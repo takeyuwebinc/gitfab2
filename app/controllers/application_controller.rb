@@ -54,7 +54,7 @@ class ApplicationController < ActionController::Base
         exception.backtrace.each do |f|
           Rails.logger.error("  #{f}")
         end
-        Sentry.capture_exception(exception) # TODO: Rails 7.0 になったら消す ActiveSupport::ErrorReporter でサブスクライブされているため
+        Sentry.capture_exception(exception) # TODO: Rails 7.1 になったら Rails.error.report(exception)
       end
       render file: Rails.root.join('public/500.html'), status: 500, layout: false, content_type: 'text/html'
     end
