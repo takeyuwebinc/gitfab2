@@ -92,8 +92,8 @@ env:
     - ANALYTICS_ID
     - ANALYTICS_HOST
     - DEVISE_SECRET_KEY
-    - SECRET_KEY_BASE
     - SENTRY_DSN
+    - RAILS_MASTER_KEY
 
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
