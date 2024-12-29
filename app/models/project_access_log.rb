@@ -43,7 +43,7 @@ class ProjectAccessLog < ApplicationRecord
         create!(project: project, created_at: DateTime.current - i.day)
       end
     else
-      count_per_day = (total / days).round
+      count_per_day = (total.to_f / days).round
       days.downto(1) do |i|
         count_per_day.times do
           create!(project: project, created_at: DateTime.current - i.day)
