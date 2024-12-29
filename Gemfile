@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.0.7'
+ruby '3.1.6'
 
 gem 'rails', '~> 7.0.0'
 
@@ -46,6 +46,7 @@ gem 'sprockets', '3.7.2'
 gem 'stl', github: 'oshimaryo/stl-ruby'
 gem 'stl2gif', github: 'takeyuwebinc/stl2gif', branch: 'develop'
 gem 'mathn' # Used in geometry gem in stl gem
+gem 'matrix'
 
 gem "sentry-rails"
 gem 'activerecord-import'
