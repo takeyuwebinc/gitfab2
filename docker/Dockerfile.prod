@@ -1,4 +1,4 @@
-ARG RUBY_VERSION=3.2.6
+ARG RUBY_VERSION=3.3.6
 FROM ruby:$RUBY_VERSION AS base
 
 ENV LANG=C.UTF-8
@@ -26,10 +26,8 @@ ENV RAILS_ENV="production" \
     PID=${WORKDIR}/tmp/pids/server.pid \
     WORKDIR=$WORKDIR
 
-ENV GEM_VERSION=3.4.21
+ENV GEM_VERSION=3.6.2
 RUN gem update --system $GEM_VERSION
-ENV BUNDLER_VERSION=2.4.22
-RUN gem install bundler -v $BUNDLER_VERSION
 
 # Use OpenSSL 1.x
 ENV NODE_OPTIONS=--openssl-legacy-provider
