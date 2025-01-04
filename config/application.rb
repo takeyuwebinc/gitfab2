@@ -13,7 +13,7 @@ require_relative "../lib/middlewares/maintenance_mode"
 module Gitfab2
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 7.0
+    config.load_defaults 7.1
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
@@ -29,7 +29,6 @@ module Gitfab2
     # config.eager_load_paths << Rails.root.join("extras")
     config.time_zone = 'Tokyo'
     config.active_job.queue_adapter = :delayed_job
-    config.active_support.cache_format_version = 7.1
     config.action_dispatch.cookies_serializer = :hybrid
 
     # config.middleware.insert 0, Middlewares::JpOnly
