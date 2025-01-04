@@ -22,7 +22,9 @@ end
 Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
 
 RSpec.configure do |config|
-  config.fixture_path = "spec/fixtures"
+  config.fixture_paths = [
+    "spec/fixtures"
+  ]
   config.infer_base_class_for_anonymous_controllers = false
   config.order = 'random'
   config.include FactoryBot::Syntax::Methods
