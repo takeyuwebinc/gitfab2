@@ -1,7 +1,7 @@
 ENV["RAILS_ENV"] ||= 'test'
 require File.expand_path("../../config/environment", __FILE__)
 require 'rspec/rails'
-require 'database_rewinder'
+require 'database_cleaner/active_record'
 
 require 'simplecov'
 
@@ -35,11 +35,14 @@ RSpec.configure do |config|
   config.include ActiveSupport::Testing::FileFixtures
 
   config.before(:suite) do
-    DatabaseRewinder.clean_all
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
   end
 
-  config.after(:each) do
-    DatabaseRewinder.clean
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
   end
 
   config.include AuthHelper, type: :controller

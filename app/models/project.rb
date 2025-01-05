@@ -52,7 +52,7 @@ class Project < ApplicationRecord
   has_many :project_access_logs, dependent: :destroy
   has_many :project_access_statistics, dependent: :destroy
 
-  enum license: { 'by' => 0, 'by-sa' => 1, 'by-nc' => 2, 'by-nc-sa' => 3 }
+  enum :license, { 'by' => 0, 'by-sa' => 1, 'by-nc' => 2, 'by-nc-sa' => 3 }
 
   before_save :set_draft
 

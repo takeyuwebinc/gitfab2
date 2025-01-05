@@ -3,7 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '3.3.6'
 
-gem 'rails', '~> 7.1.0'
+gem 'rails', '~> 7.2.0'
 
 gem 'active_decorator'
 gem 'acts_as_list'
@@ -76,7 +76,7 @@ end
 
 group :test do
   gem 'coveralls', require: false
-  gem 'database_rewinder'
+  gem 'database_cleaner-active_record'
   gem 'rails-controller-testing'
   gem 'simplecov', require: false
 end
