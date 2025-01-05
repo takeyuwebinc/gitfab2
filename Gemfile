@@ -76,7 +76,7 @@ end
 
 group :test do
   gem 'coveralls', require: false
-  gem 'database_rewinder'
+  gem 'database_cleaner-active_record'
   gem 'rails-controller-testing'
   gem 'simplecov', require: false
 end
