@@ -1,9 +1,7 @@
 class FigureUploader < CarrierWave::Uploader::Base
-  include CarrierWave::MiniMagick
+  include CarrierWave::Vips
 
   storage :file
-
-  process :fix_exif_rotation
 
   def store_dir
     "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
@@ -11,12 +9,11 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   version :small do
     process resize_to_fit: [400, 400]
-    process remove_animation: true
+    process :add_play_btn
   end
 
   version :medium do
     process resize_to_fit: [820, 10_000]
-    process :remove_animation
   end
 
   def extension_white_list
@@ -31,34 +28,31 @@ class FigureUploader < CarrierWave::Uploader::Base
     Rails.root + 'app/assets/images/play.png'
   end
 
-  def remove_animation(is_using_play_btn = false)
-    manipulate! do |img|
-      mime_magic = MimeMagic.by_path(img.path)
-      if mime_magic && mime_magic.type.match?(/gif$/)
-        img.collapse!
-        img = add_play_btn img if is_using_play_btn
+  def add_play_btn
+    vips! do |builder|
+      builder.custom do |img| # img is a Vips::Image
+        vips_loader = img.get_value("vips-loader")
+        case vips_loader
+        when "gifload"
+          # 再生ボタンを合成
+          play_btn_img = Vips::Image.new_from_file(play_btn_path.to_s)
+          overlay_center(img, play_btn_img)
+        else
+          # not gif
+          nil # return the original
+        end
       end
-      img
     end
   end
 
-  def add_play_btn(src_img)
-    overlay_file = File.open(play_btn_path).read
-    overlay_img =  MiniMagick::Image.read(overlay_file)
-    x = ((src_img['width'] - overlay_img['width']) / 2).floor
-    y = ((src_img['height'] - overlay_img['height']) / 2).floor
-    img = src_img.composite overlay_img, 'png' do |c|
-      c.channel 'A'
-      c.alpha 'Activate'
-      c.compose 'Over'
-      c.geometry "+#{x}+#{y}"
-    end
-    img
-  end
-
-  def fix_exif_rotation
-    manipulate! do |img|
-      img.tap(&:auto_orient)
-    end
+  def overlay_center(src_img, overlay_img)
+    src_img = src_img.colourspace("srgb")
+    overlay_img = overlay_img.colourspace("srgb")
+    x = ((src_img.width - overlay_img.width) / 2).floor
+    y = ((src_img.height - overlay_img.height) / 2).floor
+    alpha = overlay_img[3]
+    overlay_img_rgb = overlay_img.extract_band(0, n: 3)
+    overlay_img_with_alpha = overlay_img_rgb.bandjoin(alpha)
+    src_img.composite(overlay_img_with_alpha, :over, x:, y:)
   end
 end

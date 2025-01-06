@@ -1,5 +1,5 @@
 class AttachmentUploader < CarrierWave::Uploader::Base
-  include CarrierWave::MiniMagick
+  include CarrierWave::Vips
 
   version :small, if: :is_image?
   version :tmp, if: :is_stl?
@@ -31,10 +31,7 @@ class AttachmentUploader < CarrierWave::Uploader::Base
   private
 
     def is_image?(file)
-      MiniMagick::Image.open(file.path)
-      return true
-    rescue => _e
-      return false
+      file.content_type.match?(/image\//)
     end
 
     def is_stl?(file)
@@ -44,17 +41,15 @@ class AttachmentUploader < CarrierWave::Uploader::Base
     def generate_png(_file)
       stl = Stl2gif::Stl.new self.file.path
       tmp_png_file = stl.to_png self.file.original_filename
-      image = MiniMagick::Image.open(tmp_png_file.path)
       filepath = self.file.file.slice(0..-4) << 'png'
-      image.write filepath
+      FileUtils.mv tmp_png_file.path, filepath
     end
 
     def generate_gif(_file)
       stl = Stl2gif::Stl.new self.file.path
       stl.generate_frames
       tmp_gif_file = stl.to_gif self.file.original_filename
-      image = MiniMagick::Image.open(tmp_gif_file.path)
       filepath = self.file.file.slice(0..-4) << 'gif'
-      image.write filepath
+      FileUtils.mv tmp_gif_file.path, filepath
     end
 end

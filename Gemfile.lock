@@ -527,7 +527,6 @@ DEPENDENCIES
   maxmind-db
   meta_request
   mimemagic (~> 0.4.3)
-  mini_magick (~> 4.10)
   mysql2
   nested_form
   net-http
