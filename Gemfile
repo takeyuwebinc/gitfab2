@@ -36,6 +36,7 @@ gem 'delayed_job_active_record'
 gem "maxmind-db"
 gem "cmath"
 gem "net-http"
+gem "csv"
 
 # Frontend
 gem 'autoprefixer-rails'
