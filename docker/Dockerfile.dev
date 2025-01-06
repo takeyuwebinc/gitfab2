@@ -8,7 +8,7 @@ RUN apt-get update -qq \
   default-mysql-client \
   nodejs npm vim \
   povray povray-includes \
-  libvips \
+  libvips libimage-exiftool-perl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 

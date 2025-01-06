@@ -3,6 +3,8 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   storage :file
 
+  process :strip_gps
+
   def store_dir
     "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
   end
@@ -54,5 +56,20 @@ class FigureUploader < CarrierWave::Uploader::Base
     overlay_img_rgb = overlay_img.extract_band(0, n: 3)
     overlay_img_with_alpha = overlay_img_rgb.bandjoin(alpha)
     src_img.composite(overlay_img_with_alpha, :over, x:, y:)
+  end
+
+  def strip_gps
+    cache_stored_file! if !cached?
+    mime = MimeMagic.by_path(current_path)
+    case mime.type
+    when "image/jpeg"
+      exif = MiniExiftool.new(current_path)
+      exif.GPSLatitude = nil
+      exif.GPSLongitude = nil
+      exif.GPSAltitude = nil
+      exif.save
+    else
+      # nothing to do
+    end
   end
 end
