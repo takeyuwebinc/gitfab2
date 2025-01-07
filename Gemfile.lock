@@ -102,6 +102,10 @@ GEM
     ast (2.4.0)
     autoprefixer-rails (10.4.19.0)
       execjs (~> 2)
+    babel-source (5.8.35)
+    babel-transpiler (0.7.0)
+      babel-source (>= 4.0, < 6)
+      execjs (~> 2.0)
     base64 (0.2.0)
     bcrypt (3.1.13)
     benchmark (0.4.0)
@@ -422,7 +426,6 @@ GEM
       sprockets (> 3.0)
       sprockets-rails
       tilt
-    schmooze (0.1.6)
     securerandom (0.4.1)
     sentry-rails (5.22.0)
       railties (>= 5.0)
@@ -449,9 +452,6 @@ GEM
     sprockets (4.2.1)
       concurrent-ruby (~> 1.0)
       rack (>= 2.2.4, < 4)
-    sprockets-commoner (0.6.4)
-      schmooze (~> 0.1.6)
-      sprockets (>= 3, < 5)
     sprockets-rails (3.5.2)
       actionpack (>= 6.1)
       activesupport (>= 6.1)
@@ -501,6 +501,7 @@ DEPENDENCIES
   acts_as_list
   annotate
   autoprefixer-rails
+  babel-transpiler
   bcrypt
   better_errors
   binding_of_caller
@@ -555,7 +556,6 @@ DEPENDENCIES
   spring
   spring-commands-rspec
   sprockets (~> 4.2, >= 4.2.1)
-  sprockets-commoner
   stl!
   stl2gif!
   truncate_html

@@ -6,5 +6,3 @@
 //= require masonry.pkgd.min
 //= require ./notifications
 //= require_tree .
-
-import 'babel-polyfill/dist/polyfill'
