@@ -17,6 +17,7 @@ WORKDIR /src
 
 ENV GEM_VERSION=3.6.2
 RUN gem update --system $GEM_VERSION
+RUN gem install foreman
 
 # Use OpenSSL 1.x
 ENV NODE_OPTIONS=--openssl-legacy-provider

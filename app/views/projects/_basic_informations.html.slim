@@ -38,7 +38,7 @@ section#basic-informations
 
       .right style="text-align: right"
         #like-component data-like-url="#{project_likes_path(@project.owner, @project, format: :json)}"
-        = javascript_webpack_tag "like"
+        = javascript_include_tag "like"
 
   section.body
     - if @project.figures.present?

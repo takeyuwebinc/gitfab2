@@ -50,7 +50,6 @@ RUN bundle install && \
 COPY . .
 RUN cp config/database.ymls/production.yml config/database.yml
 RUN npm install
-RUN npm run build
 RUN SECRET_KEY_BASE=dummy bundle exec rails assets:precompile
 RUN rm -rf node_modules
 

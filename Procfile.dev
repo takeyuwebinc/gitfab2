@@ -1,0 +1,2 @@
+web: bin/rails server
+js: npm run build -- --watch

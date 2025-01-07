@@ -43,6 +43,7 @@ gem 'coffee-rails'
 gem 'jquery-rails'
 gem 'sass-rails'
 gem 'sprockets', '~> 4.2', '>= 4.2.1'
+gem 'jsbundling-rails'
 
 gem 'stl', github: 'oshimaryo/stl-ruby'
 gem 'stl2gif', github: 'takeyuwebinc/stl2gif', branch: 'develop'

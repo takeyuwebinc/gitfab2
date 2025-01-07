@@ -39,10 +39,3 @@ services:
       DB_PORT: 3306
     depends_on:
       - db
-      - webpack
-  webpack:
-    image: gitfab2_dev
-    command: >
-      /bin/sh -c "npm start"
-    volumes:
-      - .:/src
