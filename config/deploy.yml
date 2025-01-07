@@ -50,7 +50,7 @@ proxy:
   buffering:
       requests: true
       responses: true
-      max_request_body: 5_000_000
+      max_request_body: 100_000_000
       max_response_body: 0
       memory: 1_000_000
 
