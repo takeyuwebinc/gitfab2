@@ -1,39 +1,28 @@
-const path = require("path");
-const CleanWebpackPlugin = require("clean-webpack-plugin");
-const ManifestPlugin = require("webpack-manifest-plugin");
+const path    = require("path")
+const webpack = require("webpack")
 
-module.exports = (_, argv) => {
-  const isProduction = argv.mode === "production";
-  const dist = path.resolve(__dirname, "public/javascripts/dist");
+module.exports = {
+  mode: "production",
+  devtool: "source-map",
+  entry: {
+    like: "./app/frontend/like.ts"
+  },
+  output: {
+    filename: "[name].js",
+    sourceMapFilename: "[file].map",
+    chunkFormat: "module",
+    path: path.resolve(__dirname, "app/assets/builds"),
+  },
+  resolve: {
+    extensions: [".ts", ".tsx", ".js"]
+  },
 
-  return {
-    entry: {
-      like: "./app/frontend/like.ts"
-    },
-
-    output: {
-      filename: "[name].[chunkhash].js",
-      path: dist
-    },
-
-    mode: isProduction ? "production" : "development",
-
-    devtool: isProduction ? "source-map" : "inline-source-map",
-
-    resolve: {
-      extensions: [".ts", ".tsx", ".js"]
-    },
-
-    module: {
-      rules: [{ test: /\.tsx?$/, loader: "ts-loader" }]
-    },
-
-    plugins: [
-      new CleanWebpackPlugin(dist),
-      new ManifestPlugin({
-        fileName: "webpack-manifest.json",
-        publicPath: "dist/"
-      })
-    ]
-  };
-};
+  module: {
+    rules: [{ test: /\.tsx?$/, loader: "ts-loader" }]
+  },
+  plugins: [
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1
+    })
+  ]
+}
