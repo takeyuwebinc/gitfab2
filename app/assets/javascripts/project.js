@@ -36,5 +36,3 @@
 //= require ./projects
 //= require ./notifications
 //= require select2
-
-import 'babel-polyfill/dist/polyfill'

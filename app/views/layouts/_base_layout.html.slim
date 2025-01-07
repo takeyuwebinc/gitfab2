@@ -4,6 +4,7 @@ html
     title
       = content_for(:title) || "Fabble"
     = content_for(:stylesheet) || stylesheet_link_tag("dashboard", media: "all")
+    script src="https://polyfill-fastly.io/v3/polyfill.min.js?features=default"
     = content_for(:javascript) || javascript_include_tag("application")
     = content_for(:ogp)
     = csrf_meta_tags
