@@ -1,5 +1,6 @@
 class AvatarUploader < CarrierWave::Uploader::Base
   include CarrierWave::Vips
+  include StripGps
 
   # Choose what kind of storage to use for this uploader:
   storage :file
