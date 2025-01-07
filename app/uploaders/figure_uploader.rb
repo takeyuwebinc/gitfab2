@@ -11,7 +11,7 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   version :small do
     process resize_to_fit: [400, 400]
-    process :add_play_btn
+    process :add_play_btn, if: :gif?
   end
 
   version :medium do
@@ -69,5 +69,9 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   def jpeg?(carrier_wave_sanitized_file)
     MimeMagic.by_path(carrier_wave_sanitized_file.path).type == "image/jpeg"
+  end
+
+  def gif?(carrier_wave_sanitized_file)
+    MimeMagic.by_path(carrier_wave_sanitized_file.path).type == "image/gif"
   end
 end
