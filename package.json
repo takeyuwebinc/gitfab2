@@ -8,11 +8,10 @@
     "build": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "axios": "^0.18.1",
     "babel-core": "6.26.3",
     "babel-polyfill": "6.26.0",
     "babel-preset-env": "1.7.0",
-    "hyperapp": "^1.2.9"
+    "hyperapp": "^2.0.22"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

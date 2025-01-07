@@ -1,6 +1,4 @@
-import axios from "axios";
-import { ActionsType, app, h, View } from "hyperapp";
-import setupCSRFToken from "./lib/setupCSRFToken";
+import { app, h, Dispatch } from "hyperapp";
 
 interface State {
   clickEnabled: boolean;
@@ -8,78 +6,108 @@ interface State {
   likeUrl: string;
   visible: boolean;
 }
-const State: State = {
-  clickEnabled: true,
-  liked: false,
-  likeUrl: "",
-  visible: true
+
+const sendRequest = (url: string, method: string) => {
+  return fetch(url, {
+    method: method,
+    credentials: "same-origin",
+    headers: new Headers({
+      'X-CSRF-Token': getCsrfToken()
+    })
+  });
 };
 
-interface Actions {
-  initState(state: State): State;
-  makeInvisible(): State;
-  enable(clickEnabled: boolean): State;
-  setIcon(liked: boolean): State;
-  like(): State;
-  unlike(): State;
-}
-const Actions: ActionsType<State, Actions> = {
-  enable: (clickEnabled: boolean) => () => ({ clickEnabled }),
-  initState: ({ liked }) => () => ({ liked }),
-  like: () => async (state, actions) => {
-    actions.setIcon(true);
-
-    try {
-      const response = await axios.post(state.likeUrl);
-      if (!response.data.success) {
-        actions.setIcon(false);
-      }
-    } catch {
-      alertError();
-      actions.setIcon(false);
-    }
-  },
-  makeInvisible: () => () => ({ visible: false }),
-  setIcon: (liked: boolean) => () => ({ liked }),
-  unlike: () => async (state, actions) => {
-    actions.setIcon(false);
-
-    try {
-      await axios.delete(state.likeUrl);
-    } catch {
-      alertError();
-      actions.setIcon(true);
-    }
+const getCsrfToken = () => {
+  const tokenDom = document.querySelector("meta[name=csrf-token]");
+  if (tokenDom) {
+    return tokenDom.getAttribute("content") || "";
+  } else {
+    return "";
   }
-};
+}
+
+const Enable = (state: State, clickEnabled: boolean) => ({ ...state, clickEnabled });
+const SetIcon = (state: State, liked: boolean) => ({ ...state, liked });
+const Like = (state: State) => [
+  state,
+  (dispatch: Dispatch<State>) => {
+    dispatch(Enable, false);
+    sendRequest(state.likeUrl, "POST")
+      .then(response => {
+        if (response.ok) {
+          dispatch(SetIcon, true);
+        } else {
+          dispatch(SetIcon, false);
+        }
+        dispatch(Enable, true);
+      }).catch(_ => {
+        alertError();
+        dispatch(Enable, true);
+      });
+  }
+];
+const Unlike = (state: State) => [
+  state,
+  (dispatch: Dispatch<State>) => {
+    dispatch(Enable, false);
+    sendRequest(state.likeUrl, "DELETE")
+      .then(response => {
+        if (response.ok) {
+          dispatch(SetIcon, false);
+        } else {
+          dispatch(SetIcon, true);
+        }
+        dispatch(Enable, true);
+      }).catch(_ => {
+        alertError();
+        dispatch(Enable, true);
+      });
+  }
+];
 
 const alertError = () =>
   alert("An unexpected error occurred. Please try again later.");
 
-const View: View<State, Actions> = (state, actions) =>
-  h("span", {
-    className: `${state.visible ? "icon" : ""} ${
-      state.liked ? "icon-liked" : "icon-like"
-    } ${state.clickEnabled ? "" : "disabled"}`,
-    onclick: async () => {
-      if (!state.clickEnabled) {
-        return;
-      }
-      actions.enable(false);
-      state.liked ? await actions.unlike() : await actions.like();
-      actions.enable(true);
-    },
-    oncreate: () => {
-      setupCSRFToken();
-      axios
-        .get(state.likeUrl)
-        .then(response => actions.initState(response.data.like))
-        .catch(actions.makeInvisible);
-    }
-  });
+const init = (container: HTMLDivElement, likeUrl: string, liked: boolean, visible: boolean) => {
+  app({
+    init: {
+      clickEnabled: true,
+      liked: liked,
+      likeUrl: likeUrl,
+      visible: visible,
+    } as State,
+    view: (state) =>
+      h("span", {
+        className: `${state.visible ? "icon" : ""} ${
+          state.liked ? "icon-liked" : "icon-like"
+        } ${state.clickEnabled ? "" : "disabled"}`,
+        // @ts-ignore
+        onclick: (state, event) => {
+          event.stopPropagation();
+          if (state.clickEnabled) {
+            if (state.liked) {
+              return Unlike;
+            } else {
+              return Like;
+            }
+          } else {
+            return state;
+          }
+        },
+      }, []),
+    node: container
+  })
+};
 
 const container = document.querySelector<HTMLDivElement>("#like-component");
-if (container) {
-  State.likeUrl = String(container.dataset.likeUrl);
-  app(State, Actions, View, container);
+if (container && container.dataset.likeUrl) {
+  const likeUrl = container.dataset.likeUrl;
+  fetch(likeUrl, {
+    credentials: "same-origin",
+    headers: new Headers({
+      'X-CSRF-Token': getCsrfToken()
+    })
+  }).then(response => response.json())
+    .then(data => init(container, likeUrl, data.like.liked, true))
+    .catch(_ => init(container, likeUrl, false, false));
 }
