@@ -13,7 +13,7 @@ timeout 3000
 
 pid ENV.fetch('PID') { '/tmp/unicorn_gitfab2.pid' }
 
-unless ENV['RAILS_LOG_TO_STDOUT']
+if rails_env.to_s != 'production'
   stderr_path "#{app_directory}/log/unicorn_#{rails_env}.log"
   stdout_path "#{app_directory}/log/unicorn_#{rails_env}.log"
 end
