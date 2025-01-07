@@ -21,6 +21,7 @@ RUN gem install foreman
 
 # Use OpenSSL 1.x
 ENV NODE_OPTIONS=--openssl-legacy-provider
+RUN npm install -g npm-check-updates
 
 RUN useradd -m --shell /bin/bash --uid 1000 ruby
 USER ruby
