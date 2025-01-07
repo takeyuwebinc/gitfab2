@@ -3,7 +3,7 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   storage :file
 
-  process :strip_gps
+  process :strip_gps, if: :jpeg?
 
   def store_dir
     "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
@@ -60,16 +60,14 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   def strip_gps
     cache_stored_file! if !cached?
-    mime = MimeMagic.by_path(current_path)
-    case mime.type
-    when "image/jpeg"
-      exif = MiniExiftool.new(current_path)
-      exif.GPSLatitude = nil
-      exif.GPSLongitude = nil
-      exif.GPSAltitude = nil
-      exif.save
-    else
-      # nothing to do
-    end
+    exif = MiniExiftool.new(current_path)
+    exif.GPSLatitude = nil
+    exif.GPSLongitude = nil
+    exif.GPSAltitude = nil
+    exif.save
+  end
+
+  def jpeg?(carrier_wave_sanitized_file)
+    MimeMagic.by_path(carrier_wave_sanitized_file.path).type == "image/jpeg"
   end
 end
