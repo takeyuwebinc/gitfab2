@@ -15,7 +15,6 @@ gem 'friendly_id'
 gem 'jb'
 gem 'jbuilder'
 gem 'kaminari'
-gem 'mini_magick', '~> 4.10'
 gem 'observer'
 gem "mimemagic", "~> 0.4.3"
 gem 'mysql2'

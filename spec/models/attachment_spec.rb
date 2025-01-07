@@ -18,4 +18,18 @@ describe Attachment do
       it { expect(subject.content.file.content_type).to eq(attachment.content.file.content_type) }
     end
   end
+
+  context 'when attachment is an stl' do
+    let(:attachment) do
+      content = Rack::Test::UploadedFile.new(
+        Rails.root.join('spec', 'fixtures', 'files', 'stls', 'cube-ascii.stl'),
+        'model/stl'
+      )
+      build(:attachment, content:)
+    end
+
+    it "保存できること" do
+      expect(attachment.save).to eq true
+    end
+  end
 end

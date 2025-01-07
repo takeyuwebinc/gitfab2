@@ -38,9 +38,9 @@
           .carousel-inner
             - figures.each do |figure|
               - next if figure.content.blank?
-              - url = defined?(note_card_show) ? figure.content.medium.url : figure.content.small.url
+              - url = figure.content.url
               div class="carousel-item #{'active' if count.zero?}"
-                = image_tag url, class: "d-block w-100 clickable-img", alt: figure.content.filename
+                = image_tag url, class: "d-block w-100 clickable-img", alt: figure.content.filename, loading: "lazy"
                 - count += 1
             - attachments.each do |attachment|
               - if attachment.content.tmp.url&.end_with?(".png")
