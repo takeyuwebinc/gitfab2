@@ -1,5 +1,6 @@
 class FigureUploader < CarrierWave::Uploader::Base
   include CarrierWave::Vips
+  include StripGps
 
   storage :file
 
@@ -9,7 +10,7 @@ class FigureUploader < CarrierWave::Uploader::Base
 
   version :small do
     process resize_to_fit: [400, 400]
-    process :add_play_btn
+    process :add_play_btn, if: :gif?
   end
 
   version :medium do
@@ -54,5 +55,9 @@ class FigureUploader < CarrierWave::Uploader::Base
     overlay_img_rgb = overlay_img.extract_band(0, n: 3)
     overlay_img_with_alpha = overlay_img_rgb.bandjoin(alpha)
     src_img.composite(overlay_img_with_alpha, :over, x:, y:)
+  end
+
+  def gif?(carrier_wave_sanitized_file)
+    MimeMagic.by_path(carrier_wave_sanitized_file.path).type == "image/gif"
   end
 end

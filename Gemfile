@@ -35,6 +35,7 @@ gem "maxmind-db"
 gem "cmath"
 gem "net-http"
 gem "csv"
+gem "mini_exiftool"
 
 # Frontend
 gem 'autoprefixer-rails'

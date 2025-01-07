@@ -1,5 +1,6 @@
 class AttachmentUploader < CarrierWave::Uploader::Base
   include CarrierWave::Vips
+  include StripGps
 
   version :small, if: :is_image?
   version :tmp, if: :is_stl?

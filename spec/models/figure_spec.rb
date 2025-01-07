@@ -45,4 +45,18 @@ describe Figure do
       expect(figure.save).to eq true
     end
   end
+
+  context 'JPEGのとき' do
+    let(:figure) do
+      content = Rack::Test::UploadedFile.new(
+        Rails.root.join('spec', 'fixtures', 'files', 'images', 'image.jpg'),
+        'image/jpeg'
+      )
+      build(:content_figure, content:)
+    end
+
+    it "保存できること" do
+      expect(figure.save).to eq true
+    end
+  end
 end
