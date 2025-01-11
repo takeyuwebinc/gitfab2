@@ -1,6 +1,10 @@
 #admin-projects-index
   h2.h2 Review Project Comments
 
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
   nav.nav.flex-row
     = link_to "all", admin_project_comments_path, class: 'nav-link'
     = link_to "unconfirmed", admin_project_comments_path(status: "unconfirmed"), class: 'nav-link'
