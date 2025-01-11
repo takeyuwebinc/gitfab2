@@ -2,12 +2,13 @@
 #
 # Table name: card_comments
 #
-#  id         :integer          not null, primary key
-#  body       :text(65535)
-#  created_at :datetime
-#  updated_at :datetime
-#  card_id    :integer          not null
-#  user_id    :integer          not null
+#  id                             :integer          not null, primary key
+#  body                           :text(65535)
+#  spam(スパムコメントとして扱う) :boolean          default(FALSE), not null
+#  created_at                     :datetime
+#  updated_at                     :datetime
+#  card_id                        :integer          not null
+#  user_id                        :integer          not null
 #
 # Indexes
 #
@@ -25,4 +26,6 @@ class CardComment < ApplicationRecord
   belongs_to :user
 
   validates :body, presence: true
+
+  scope :not_spam, -> { where(spam: false) }
 end

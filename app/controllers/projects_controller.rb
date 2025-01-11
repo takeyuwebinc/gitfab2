@@ -23,8 +23,8 @@ class ProjectsController < ApplicationController
     end
 
     ProjectAccessLog.log!(@project, current_user)
-    @project_comments = @project.project_comments.includes(:user).order(:id)
-    @states = @project.states.includes(:attachments, :contributors, :figures, comments: [:user], annotations: [:attachments, :figures, :contributors, comments: [:user]]).ordered_by_position
+    @project_comments = @project.visible_project_comments.includes(:user).order(:id)
+    @states = @project.states.includes(:attachments, :contributors, :figures, visible_comments: [:user], annotations: [:attachments, :figures, :contributors, visible_comments: [:user]]).ordered_by_position
     @usages = @project.usages.includes(:attachments, :figures, :contributors, contributions: [:contributor])
   end
 

@@ -39,6 +39,66 @@ describe ProjectsController, type: :controller do
             it { is_expected.to have_http_status(:not_found) }
           end
         end
+
+        describe 'project comment visibility' do
+          context 'when the comment is spam' do
+            let!(:project_comment) { create(:project_comment, project:, spam: true) }
+
+            it 'does not show the comment' do
+              subject
+              expect(assigns(:project_comments)).to_not include(project_comment)
+            end
+          end
+          context 'when the comment is not spam' do
+            let!(:project_comment) { create(:project_comment, project:) }
+
+            it 'shows the comment' do
+              subject
+              expect(assigns(:project_comments)).to include(project_comment)
+            end
+          end
+        end
+
+        describe 'state comment visibility' do
+          let(:card) { create(:state, project:) }
+          context 'when the comment is spam' do
+            let!(:card_comment) { create(:card_comment, card:, spam: true) }
+
+            it 'does not show the comment' do
+              subject
+              expect(assigns(:states).map(&:visible_comments).flatten).to_not include(card_comment)
+            end
+          end
+          context 'when the comment is not spam' do
+            let!(:card_comment) { create(:card_comment, card:) }
+
+            it 'shows the comment' do
+              subject
+              expect(assigns(:states).map(&:visible_comments).flatten).to include(card_comment)
+            end
+          end
+        end
+
+        describe 'annotation comment visibility' do
+          let(:state) { create(:state, project:) }
+          let(:card) { create(:annotation, state:) }
+          context 'when the comment is spam' do
+            let!(:card_comment) { create(:card_comment, card:, spam: true) }
+
+            it 'does not show the comment' do
+              subject
+              expect(assigns(:states).map(&:annotations).flatten.map(&:visible_comments).flatten).to_not include(card_comment)
+            end
+          end
+          context 'when the comment is not spam' do
+            let!(:card_comment) { create(:card_comment, card:) }
+
+            it 'shows the comment' do
+              subject
+              expect(assigns(:states).map(&:annotations).flatten.map(&:visible_comments).flatten).to include(card_comment)
+            end
+          end
+        end
       end
       describe 'GET new' do
         before do

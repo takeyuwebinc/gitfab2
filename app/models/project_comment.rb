@@ -2,12 +2,13 @@
 #
 # Table name: project_comments
 #
-#  id         :bigint(8)        not null, primary key
-#  body       :text(65535)      not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  project_id :integer          not null
-#  user_id    :integer          not null
+#  id                             :bigint(8)        not null, primary key
+#  body                           :text(65535)      not null
+#  spam(スパムコメントとして扱う) :boolean          default(FALSE), not null
+#  created_at                     :datetime         not null
+#  updated_at                     :datetime         not null
+#  project_id                     :integer          not null
+#  user_id                        :integer          not null
 #
 # Indexes
 #
@@ -25,6 +26,8 @@ class ProjectComment < ApplicationRecord
   belongs_to :project
 
   validates :body, presence: true, length: { maximum: 300 }
+
+  scope :not_spam, -> { where(spam: false) }
 
   def manageable_by?(user)
     self.user == user || project.manageable_by?(user)
