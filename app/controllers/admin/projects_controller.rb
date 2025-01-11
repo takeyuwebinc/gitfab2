@@ -1,5 +1,5 @@
 class Admin::ProjectsController < Admin::ApplicationController
-  before_action :load_project, only: [:show, :update, :destroy]
+  before_action :load_project, only: [:show, :destroy]
 
   def index
     @projects = Project.published
