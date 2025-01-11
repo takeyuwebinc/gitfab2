@@ -42,7 +42,7 @@ describe ProjectsController, type: :controller do
 
         describe 'project comment visibility' do
           context 'when the comment is spam' do
-            let!(:project_comment) { create(:project_comment, project:, spam: true) }
+            let!(:project_comment) { create(:project_comment, :spam, project:) }
 
             it 'does not show the comment' do
               subject
@@ -62,7 +62,7 @@ describe ProjectsController, type: :controller do
         describe 'state comment visibility' do
           let(:card) { create(:state, project:) }
           context 'when the comment is spam' do
-            let!(:card_comment) { create(:card_comment, card:, spam: true) }
+            let!(:card_comment) { create(:card_comment, :spam, card:) }
 
             it 'does not show the comment' do
               subject
@@ -83,7 +83,7 @@ describe ProjectsController, type: :controller do
           let(:state) { create(:state, project:) }
           let(:card) { create(:annotation, state:) }
           context 'when the comment is spam' do
-            let!(:card_comment) { create(:card_comment, card:, spam: true) }
+            let!(:card_comment) { create(:card_comment, :spam, card:) }
 
             it 'does not show the comment' do
               subject

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_11_062229) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_11_071932) do
   create_table "attachments", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
     t.string "content"
     t.string "attachable_type", null: false
@@ -40,7 +40,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_11_062229) do
     t.integer "user_id", null: false
     t.integer "card_id", null: false
     t.text "body"
-    t.boolean "spam", default: false, null: false, comment: "スパムコメントとして扱う"
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.index ["card_id"], name: "fk_rails_c8dff2752a"
@@ -204,7 +204,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_11_062229) do
     t.text "body", null: false
     t.integer "user_id", null: false
     t.integer "project_id", null: false
-    t.boolean "spam", default: false, null: false, comment: "スパムコメントとして扱う"
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.index ["project_id"], name: "index_project_comments_on_project_id"

@@ -2,13 +2,13 @@
 #
 # Table name: card_comments
 #
-#  id                             :integer          not null, primary key
-#  body                           :text(65535)
-#  spam(スパムコメントとして扱う) :boolean          default(FALSE), not null
-#  created_at                     :datetime
-#  updated_at                     :datetime
-#  card_id                        :integer          not null
-#  user_id                        :integer          not null
+#  id                                                  :integer          not null, primary key
+#  body                                                :text(65535)
+#  status(確認ステータス 0:未確認 1:承認済み 2:スパム) :integer          default("unconfirmed"), not null
+#  created_at                                          :datetime
+#  updated_at                                          :datetime
+#  card_id                                             :integer          not null
+#  user_id                                             :integer          not null
 #
 # Indexes
 #
@@ -27,5 +27,5 @@ class CardComment < ApplicationRecord
 
   validates :body, presence: true
 
-  scope :not_spam, -> { where(spam: false) }
+  enum :status, { unconfirmed: 0, approved: 1, spam: 2 }
 end

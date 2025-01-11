@@ -2,13 +2,13 @@
 #
 # Table name: project_comments
 #
-#  id                             :bigint(8)        not null, primary key
-#  body                           :text(65535)      not null
-#  spam(スパムコメントとして扱う) :boolean          default(FALSE), not null
-#  created_at                     :datetime         not null
-#  updated_at                     :datetime         not null
-#  project_id                     :integer          not null
-#  user_id                        :integer          not null
+#  id                                                  :bigint(8)        not null, primary key
+#  body                                                :text(65535)      not null
+#  status(確認ステータス 0:未確認 1:承認済み 2:スパム) :integer          default("unconfirmed"), not null
+#  created_at                                          :datetime         not null
+#  updated_at                                          :datetime         not null
+#  project_id                                          :integer          not null
+#  user_id                                             :integer          not null
 #
 # Indexes
 #
@@ -28,7 +28,11 @@ FactoryBot.define do
     project
 
     trait :spam do
-      spam { true }
+      status { "spam" }
+    end
+
+    trait :approved do
+      status { "approved" }
     end
   end
 end

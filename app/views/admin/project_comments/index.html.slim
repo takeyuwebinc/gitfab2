@@ -1,0 +1,44 @@
+#admin-projects-index
+  h2.h2 Review Project Comments
+
+  nav.nav.flex-row
+    = link_to "all", admin_project_comments_path, class: 'nav-link'
+    = link_to "unconfirmed", admin_project_comments_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "approved", admin_project_comments_path(status: "approved"), class: 'nav-link'
+    = link_to "spam", admin_project_comments_path(status: "spam"), class: 'nav-link'
+
+  .mb-3
+    - if @status == "unconfirmed" && @project_comments.length.positive?
+      = button_to "すべての未確認コメントをスパムにする", admin_project_comments_spam_batch_path(before: @project_comments.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+    - else
+      = button_to "すべての未確認コメントをスパムにする", "#", disabled: true
+
+  table.table
+    thead
+      tr
+        th.status
+          | ステータス
+        th.body
+          | コメント
+        th.project-name
+          | プロジェクト名
+        th.management
+          | 操作
+    tbody
+    - @project_comments.each do |project_comment|
+      tr.project
+        td
+          = project_comment.status
+        td
+          = project_comment.body
+        td
+          = project_comment.project.title_with_owner_name
+        td
+          - if project_comment.unconfirmed?
+            = button_to "承認", admin_project_comment_approval_path(project_comment, status: @status), method: :post
+          - if project_comment.approved?
+            = button_to "未承認に戻す", admin_project_comment_approval_path(project_comment, status: @status), method: :delete
+          - if project_comment.spam?
+            = button_to "未承認に戻す", admin_project_comment_spam_path(project_comment, status: @status), method: :delete
+
+  = paginate(@project_comments)
