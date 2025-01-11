@@ -47,7 +47,10 @@ class ProjectComment < ApplicationRecord
 
   # コメントをスパムとして記録する
   def mark_spam!
-    update!(status: :spam)
+    with_lock do
+      user.notifications_given.destroy_all
+      update!(status: :spam)
+    end
   end
 
   # スパムコメントを未確認に戻す

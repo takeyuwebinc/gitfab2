@@ -66,10 +66,13 @@ describe ProjectComment do
 
   describe '#mark_spam!' do
     subject { project_comment.mark_spam! }
-    let(:project_comment) { create(:project_comment) }
+    let(:comment_user) { create(:user) }
+    let(:project_comment) { create(:project_comment, user: comment_user) }
+    let!(:notification) { create(:notification, notifier: comment_user) }
 
-    it do
+    it "通知を削除してスパムとして記録すること" do
       expect { subject }.to change { project_comment.reload.status }.from('unconfirmed').to('spam')
+      expect(Notification.exists?(notification.id)).to be false
     end
   end
 
