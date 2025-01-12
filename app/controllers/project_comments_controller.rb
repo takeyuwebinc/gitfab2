@@ -1,8 +1,7 @@
 class ProjectCommentsController < ApplicationController
   def create
     project = Project.find(params[:project_id])
-    project_comment = project.project_comments.build(project_comment_params)
-    project_comment.status = 'spam' if current_user.spammer?
+    project_comment = ProjectComment.build_from(project, current_user, project_comment_params)
 
     if project_comment.save
       notify_users(project)
@@ -35,7 +34,7 @@ class ProjectCommentsController < ApplicationController
   private
 
     def project_comment_params
-      params.require(:project_comment).permit(:body).merge(user: current_user)
+      params.require(:project_comment).permit(:body)
     end
 
     def notify_users(project)

@@ -60,4 +60,14 @@ class ProjectComment < ApplicationRecord
     raise "Can't unmark spam approved comment" if approved?
     update!(status: :unconfirmed)
   end
+
+  # コメントオブジェクトを作成する
+  # 投稿者がスパム投稿者の場合、スパムコメントとして作成する
+  def self.build_from(project, user, params)
+    build(params).tap do |project_comment|
+      project_comment.project = project
+      project_comment.user = user
+      project_comment.status = :spam if user.spammer?
+    end
+  end
 end
