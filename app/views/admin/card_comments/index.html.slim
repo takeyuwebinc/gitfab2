@@ -17,27 +17,31 @@
     - else
       = button_to "すべての未確認コメントをスパムにする", "#", disabled: true
 
-  table.table
+  table.table.card-comments-table
     thead
       tr
         th.status
           | ステータス
         th.body
           | コメント
-        th.card-name
+        th.commenter
+          | 投稿者
+        th.project-name
           | プロジェクト名
         th.management
           | 操作
     tbody
     - @card_comments.each do |card_comment|
       tr.card
-        td
+        td.status
           = card_comment.status
-        td
+        td.body
           = card_comment.body
-        td
+        td.commenter
+          = card_comment.user.name
+        td.project-name
           = card_comment.card.project.title_with_owner_name
-        td
+        td.management
           - if card_comment.unconfirmed?
             = button_to "承認", admin_card_comment_approval_path(card_comment, status: @status), method: :post
           - if card_comment.approved?
