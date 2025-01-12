@@ -4,7 +4,7 @@ class ProjectCommentsController < ApplicationController
     project_comment = ProjectComment.build_from(project, current_user, project_comment_params)
 
     if project_comment.save
-      notify_users(project)
+      notify_users(project_comment)
       redirect_to project_path(project.owner, project, anchor: "project-comment-#{project_comment.id}")
     else
       redirect_to project_path(project.owner, project, anchor: "project-comment-form"),
@@ -37,11 +37,13 @@ class ProjectCommentsController < ApplicationController
       params.require(:project_comment).permit(:body)
     end
 
-    def notify_users(project)
+    def notify_users(project_comment)
+      return if project_comment.spam?
+      project = project_comment.project
       users = project.notifiable_users(current_user)
       return if users.blank?
 
       body = "#{current_user.name} commented on #{project.title}."
-      project.notify(users, current_user, project_path(project.owner, project), body)
+      project.notify(users, project_comment.user, project_path(project.owner, project), body)
     end
 end

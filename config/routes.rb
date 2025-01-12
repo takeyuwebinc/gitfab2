@@ -25,6 +25,13 @@ Rails.application.routes.draw do
     namespace :project_comments do
       resource :spam_batch, only: :create
     end
+    resources :card_comments, only: %i[index update destroy] do
+      resource :approval, only: [:create, :destroy], module: :card_comments
+      resource :spam, only: [:create, :destroy], module: :card_comments
+    end
+    namespace :card_comments do
+      resource :spam_batch, only: :create
+    end
     resources :spammers, only: %i[index destroy]
   end
 

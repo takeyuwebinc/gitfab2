@@ -22,10 +22,19 @@
 #
 
 class CardComment < ApplicationRecord
+  include SpamCommentable
   belongs_to :card, counter_cache: :comments_count
   belongs_to :user
 
   validates :body, presence: true
 
-  enum :status, { unconfirmed: 0, approved: 1, spam: 2 }
+  # コメントオブジェクトを作成する
+  # 投稿者がスパム投稿者の場合、スパムコメントとして作成する
+  def self.build_from(card, user, params)
+    build(params).tap do |card_comment|
+      card_comment.card = card
+      card_comment.user = user
+      card_comment.status = :spam if user.spammer?
+    end
+  end
 end

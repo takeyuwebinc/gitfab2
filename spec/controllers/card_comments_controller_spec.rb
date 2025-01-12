@@ -16,6 +16,22 @@ describe CardCommentsController, type: :controller do
                   .and render_template :create
       end
       it { expect{ subject }.to change{ CardComment.count }.by(1) }
+  
+      describe 'スパム投稿' do
+        context 'スパム投稿者でない場合' do
+          it '未確認コメントとして登録すること' do
+            expect{ subject }.to change(CardComment, :count).by(1).and change(Notification, :count).by(1)
+            expect(CardComment.last).to be_unconfirmed
+          end
+        end
+        context 'スパム投稿者の場合' do
+          before { user.spam_detect! }
+          it 'スパムコメントとして登録すること' do
+            expect{ subject }.to change(CardComment, :count).by(1).and change(Notification, :count).by(0)
+            expect(CardComment.last).to be_spam
+          end
+        end
+      end
     end
 
     context 'with invalid parameters' do
