@@ -28,4 +28,89 @@ describe ProjectComment do
       end
     end
   end
+
+  describe '#approve!' do
+    subject { project_comment.approve! }
+    let(:project_comment) { create(:project_comment) }
+
+    it do
+      expect { subject }.to change { project_comment.reload.status }.from('unconfirmed').to('approved')
+    end
+  end
+
+  describe '#unapprove!' do
+    subject { project_comment.unapprove! }
+    let(:project_comment) { create(:project_comment, status: status) }
+
+    context 'when status is unconfirmed' do
+      let(:status) { 'unconfirmed' }
+      it do
+        expect { subject }.not_to change { project_comment.reload.status }
+      end
+    end
+
+    context 'when status is approved' do
+      let(:status) { 'approved' }
+      it do
+        expect { subject }.to change { project_comment.reload.status }.from('approved').to('unconfirmed')
+      end
+    end
+
+    context 'when status is spam' do
+      let(:status) { 'spam' }
+      it do
+        expect { subject }.to raise_error(RuntimeError, "Can't unapprove spam comment")
+      end
+    end
+  end
+
+  describe '#mark_spam!' do
+    subject { project_comment.mark_spam! }
+    let(:comment_user) { create(:user) }
+    let(:project_comment) { create(:project_comment, user: comment_user) }
+    let!(:notification) { create(:notification, notifier: comment_user) }
+
+    it "通知を削除してスパムとして記録すること" do
+      expect { subject }.to change { project_comment.reload.status }.from('unconfirmed').to('spam')
+      expect(Notification.exists?(notification.id)).to be false
+    end
+
+    context 'スパム投稿者として記録済みの場合' do
+      before { create(:spammer, user: comment_user) }
+
+      it { expect { subject }.to_not raise_error }
+      it { expect { subject }.to_not change(Spammer, :count) }
+    end
+
+    context 'スパム投稿者として記録されていない場合' do
+      it { expect { subject }.to_not raise_error }
+      it { expect { subject }.to change(Spammer, :count).by(1) }
+    end
+  end
+
+  describe '#unmark_spam!' do
+    subject { project_comment.unmark_spam! }
+    let(:project_comment) { create(:project_comment, status: status) }
+
+    context 'when status is unconfirmed' do
+      let(:status) { 'unconfirmed' }
+      it do
+        expect { subject }.not_to change { project_comment.reload.status }
+      end
+    end
+
+    context 'when status is approved' do
+      let(:status) { 'approved' }
+      it do
+        expect { subject }.to raise_error(RuntimeError, "Can't unmark spam approved comment")
+      end
+    end
+
+    context 'when status is spam' do
+      let(:status) { 'spam' }
+      it do
+        expect { subject }.to change { project_comment.reload.status }.from('spam').to('unconfirmed')
+      end
+    end
+  end
 end

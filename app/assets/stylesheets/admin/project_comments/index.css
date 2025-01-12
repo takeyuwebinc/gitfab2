@@ -1,0 +1,17 @@
+.project-comments-table {
+  table-layout: fixed;
+}
+.project-comments-table .status {
+  width: 100px;
+}
+.project-comments-table .commenter {
+  width: 150px;
+  word-break: break-all;
+}
+.project-comments-table .project-name {
+  width: 200px;
+  word-break: break-all;
+}
+.project-comments-table .management {
+  width: 100px;
+}

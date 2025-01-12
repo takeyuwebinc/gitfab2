@@ -24,6 +24,22 @@ describe ProjectCommentsController, type: :controller do
         subject
         expect(ProjectComment.last.user).to eq user
       end
+  
+      describe 'スパム投稿' do
+        context 'スパム投稿者でない場合' do
+          it '未確認コメントとして登録すること' do
+            expect{ subject }.to change(ProjectComment, :count).by(1).and change(Notification, :count).by(1)
+            expect(ProjectComment.last).to be_unconfirmed
+          end
+        end
+        context 'スパム投稿者の場合' do
+          before { user.spam_detect! }
+          it 'スパムコメントとして登録すること' do
+            expect{ subject }.to change(ProjectComment, :count).by(1).and change(Notification, :count).by(0)
+            expect(ProjectComment.last).to be_spam
+          end
+        end
+      end
     end
 
     context 'with invalid params' do

@@ -47,6 +47,7 @@ class User < ApplicationRecord
   has_many :my_notifications, class_name: 'Notification', inverse_of: :notified, foreign_key: :notified_id
   has_many :project_comments, dependent: :destroy
   has_many :project_access_logs
+  has_one :spammer
 
   validates :name, unique_owner_name: true, name_format: true
   validates :email, uniqueness: { case_sensitive: false }, format: { with: URI::MailTo::EMAIL_REGEXP, message: "format is invalid" }
@@ -164,6 +165,16 @@ class User < ApplicationRecord
         is_deleted: true
       )
     end
+  end
+
+  def spammer?
+    spammer.present?
+  end
+
+  # スパム投稿を検出した
+  def spam_detect!
+    return true if spammer?
+    create_spammer!(detected_at: Time.current)
   end
 
   private

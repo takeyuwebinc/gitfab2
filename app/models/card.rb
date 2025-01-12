@@ -29,6 +29,7 @@ class Card < ApplicationRecord
   has_many :attachments, as: :attachable, dependent: :destroy
   accepts_nested_attributes_for :attachments
   has_many :comments, class_name: "CardComment", dependent: :destroy
+  has_many :visible_comments, -> { not_spam }, class_name: 'CardComment'
   has_many :contributions, dependent: :destroy
   has_many :contributors, through: :contributions, class_name: "User"
 

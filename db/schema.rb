@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_12_28_091229) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_12_015153) do
   create_table "attachments", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
     t.string "content"
     t.string "attachable_type", null: false
@@ -40,6 +40,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_28_091229) do
     t.integer "user_id", null: false
     t.integer "card_id", null: false
     t.text "body"
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.index ["card_id"], name: "fk_rails_c8dff2752a"
@@ -203,6 +204,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_28_091229) do
     t.text "body", null: false
     t.integer "user_id", null: false
     t.integer "project_id", null: false
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.index ["project_id"], name: "index_project_comments_on_project_id"
@@ -234,6 +236,14 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_28_091229) do
     t.index ["owner_type", "owner_id"], name: "index_projects_owner"
     t.index ["slug", "owner_type", "owner_id"], name: "index_projects_slug_owner", unique: true
     t.index ["updated_at"], name: "index_projects_updated_at"
+  end
+
+  create_table "spammers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.timestamp "detected_at", comment: "スパムとして検知された日時"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_spammers_on_user_id", unique: true
   end
 
   create_table "tags", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
@@ -283,6 +293,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_28_091229) do
   add_foreign_key "project_access_statistics", "projects"
   add_foreign_key "project_comments", "projects"
   add_foreign_key "project_comments", "users"
+  add_foreign_key "spammers", "users"
   add_foreign_key "tags", "projects"
   add_foreign_key "tags", "users", name: "fk_tags_user_id"
 end

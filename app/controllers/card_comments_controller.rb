@@ -1,10 +1,10 @@
 class CardCommentsController < ApplicationController
   def create
     card = Card.find(params[:card_id])
-    comment = current_user.card_comments.build(card: card, body: params[:body])
+    comment = CardComment.build_from(card, current_user, { body: params[:body] })
 
     if comment.save
-      notify_users(card)
+      notify_users(comment)
       render :create, locals: { comment: comment, card_order: card.comments_count - 1 }
     else
       message = comment.errors.messages.presence || { "Error:": "Something's wrong" }
@@ -23,7 +23,9 @@ class CardCommentsController < ApplicationController
 
   private
 
-    def notify_users(card)
+    def notify_users(comment)
+      return if comment.spam?
+      card = comment.card
       project = card.project
       users = project.notifiable_users(current_user)
       return if users.blank?

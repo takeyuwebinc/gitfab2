@@ -1,0 +1,52 @@
+#admin-cards-index
+  h2.h2 Review Card Comments
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  nav.nav.flex-row
+    = link_to "all", admin_card_comments_path, class: 'nav-link'
+    = link_to "unconfirmed", admin_card_comments_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "approved", admin_card_comments_path(status: "approved"), class: 'nav-link'
+    = link_to "spam", admin_card_comments_path(status: "spam"), class: 'nav-link'
+
+  .mb-3
+    - if @card_comments.length.positive?
+      = button_to "すべての未確認コメントをスパムにする", admin_card_comments_spam_batch_path(before: @card_comments.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+    - else
+      = button_to "すべての未確認コメントをスパムにする", "#", disabled: true
+
+  table.table.card-comments-table
+    thead
+      tr
+        th.status
+          | ステータス
+        th.body
+          | コメント
+        th.commenter
+          | 投稿者
+        th.project-name
+          | プロジェクト名
+        th.management
+          | 操作
+    tbody
+    - @card_comments.each do |card_comment|
+      tr.card
+        td.status
+          = card_comment.status
+        td.body
+          = card_comment.body
+        td.commenter
+          = card_comment.user.name
+        td.project-name
+          = card_comment.card.project.title_with_owner_name
+        td.management
+          - if card_comment.unconfirmed?
+            = button_to "承認", admin_card_comment_approval_path(card_comment, status: @status), method: :post
+          - if card_comment.approved?
+            = button_to "未承認に戻す", admin_card_comment_approval_path(card_comment, status: @status), method: :delete
+          - if card_comment.spam?
+            = button_to "未承認に戻す", admin_card_comment_spam_path(card_comment, status: @status), method: :delete
+
+  = paginate(@card_comments)

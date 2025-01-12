@@ -1,0 +1,17 @@
+.card-comments-table {
+  table-layout: fixed;
+}
+.card-comments-table .status {
+  width: 100px;
+}
+.card-comments-table .commenter {
+  width: 150px;
+  word-break: break-all;
+}
+.card-comments-table .project-name {
+  width: 200px;
+  word-break: break-all;
+}
+.card-comments-table .management {
+  width: 100px;
+}
