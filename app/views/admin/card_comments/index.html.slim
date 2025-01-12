@@ -12,7 +12,7 @@
     = link_to "spam", admin_card_comments_path(status: "spam"), class: 'nav-link'
 
   .mb-3
-    - if @status == "unconfirmed" && @card_comments.length.positive?
+    - if @card_comments.length.positive?
       = button_to "すべての未確認コメントをスパムにする", admin_card_comments_spam_batch_path(before: @card_comments.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
     - else
       = button_to "すべての未確認コメントをスパムにする", "#", disabled: true
