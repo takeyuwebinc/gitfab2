@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_11_071932) do
+ActiveRecord::Schema[7.2].define(version: 2025_01_12_015153) do
   create_table "attachments", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
     t.string "content"
     t.string "attachable_type", null: false
@@ -238,6 +238,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_11_071932) do
     t.index ["updated_at"], name: "index_projects_updated_at"
   end
 
+  create_table "spammers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.timestamp "detected_at", comment: "スパムとして検知された日時"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_spammers_on_user_id", unique: true
+  end
+
   create_table "tags", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
     t.integer "user_id"
     t.integer "project_id"
@@ -285,6 +293,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_11_071932) do
   add_foreign_key "project_access_statistics", "projects"
   add_foreign_key "project_comments", "projects"
   add_foreign_key "project_comments", "users"
+  add_foreign_key "spammers", "users"
   add_foreign_key "tags", "projects"
   add_foreign_key "tags", "users", name: "fk_tags_user_id"
 end

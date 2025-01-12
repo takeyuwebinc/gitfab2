@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     namespace :project_comments do
       resource :spam_batch, only: :create
     end
+    resources :spammers, only: %i[index destroy]
   end
 
   root 'projects#index'

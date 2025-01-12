@@ -1,0 +1,29 @@
+#admin-projects-index
+  h2.h2 Spammers
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  nav.nav.flex-row
+
+  table.table
+    thead
+      tr
+        th.user
+          | ユーザー
+        th.detected_at
+          | 検出日時
+        th.management
+          | 操作
+    tbody
+    - @spammers.each do |spammer|
+      tr.project
+        td
+          = spammer.user.name
+        td
+          = l(spammer.detected_at)
+        td
+          = button_to "取り消し", admin_spammer_path(spammer), method: :post
+
+  = paginate(@spammers)

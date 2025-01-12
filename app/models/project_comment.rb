@@ -49,6 +49,7 @@ class ProjectComment < ApplicationRecord
   def mark_spam!
     with_lock do
       user.notifications_given.destroy_all
+      user.spam_detect!
       update!(status: :spam)
     end
   end

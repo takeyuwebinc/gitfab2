@@ -74,6 +74,18 @@ describe ProjectComment do
       expect { subject }.to change { project_comment.reload.status }.from('unconfirmed').to('spam')
       expect(Notification.exists?(notification.id)).to be false
     end
+
+    context 'スパム投稿者として記録済みの場合' do
+      before { create(:spammer, user: comment_user) }
+
+      it { expect { subject }.to_not raise_error }
+      it { expect { subject }.to_not change(Spammer, :count) }
+    end
+
+    context 'スパム投稿者として記録されていない場合' do
+      it { expect { subject }.to_not raise_error }
+      it { expect { subject }.to change(Spammer, :count).by(1) }
+    end
   end
 
   describe '#unmark_spam!' do

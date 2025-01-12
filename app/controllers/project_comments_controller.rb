@@ -2,6 +2,7 @@ class ProjectCommentsController < ApplicationController
   def create
     project = Project.find(params[:project_id])
     project_comment = project.project_comments.build(project_comment_params)
+    project_comment.status = 'spam' if current_user.spammer?
 
     if project_comment.save
       notify_users(project)
