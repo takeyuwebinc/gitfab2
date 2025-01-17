@@ -1,0 +1,15 @@
+/ local_variables: announcement
+
+#ticker style="background: white; padding: 1rem 0"
+  .container style="text-align: center; border: 2px solid red; max-width: 1000px; margin: 0 auto;"
+    .inner style="margin: 1rem"
+      .lang-jp
+        h2 style="margin-bottom: 1rem; font-weight: bold; font-size: 18px;"
+          = announcement.title_ja.html_safe
+        p style="line-height: 1.5rem"
+          = announcement.content_ja.html_safe
+      .lang-en
+        h2 style="margin-bottom: 1rem; font-weight: bold; font-size: 18px;"
+          = announcement.title_en.html_safe
+        p style="line-height: 1.5rem"
+          = announcement.content_en.html_safe

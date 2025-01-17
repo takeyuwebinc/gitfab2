@@ -17,6 +17,28 @@ describe ProjectsController, type: :controller do
 
       it { is_expected.to render_template :index }
     end
+
+    describe 'Announcements' do
+      let!(:announcement) { create(:announcement, start_at: Time.current, end_at: 1.hour.from_now) }
+      it "shows the announcement" do
+        get :index
+        expect(assigns(:announcements)).to include(announcement)
+      end
+      context 'when the announcement is expired' do
+        let!(:announcement) { create(:announcement, start_at: 1.hour.ago, end_at: 1.second.ago) }
+        it "does not show the announcement" do
+          get :index
+          expect(assigns(:announcements)).not_to include(announcement)
+        end
+      end
+      context 'when the announcement is not started' do
+        let!(:announcement) { create(:announcement, start_at: 1.hour.from_now, end_at: 2.hours.from_now) }
+        it "does not show the announcement" do
+          get :index
+          expect(assigns(:announcements)).not_to include(announcement)
+        end
+      end
+    end
   end
 
   %w[user group].each do |owner_type|

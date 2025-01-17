@@ -1,0 +1,25 @@
+/ local_variables: form
+
+div.form-group
+  = form.label :title_ja
+  = form.text_field :title_ja, class: 'form-control'
+
+div.form-group
+  = form.label :title_en
+  = form.text_field :title_en, class: 'form-control'
+
+div.form-group
+  = form.label :content_ja
+  = form.text_area :content_ja, class: 'form-control'
+
+div.form-group
+  = form.label :content_en
+  = form.text_area :content_en, class: 'form-control'
+
+div.form-group
+  = form.label :start_at
+  = form.datetime_field :start_at, class: 'form-control'
+
+div.form-group
+  = form.label :end_at
+  = form.datetime_field :end_at, class: 'form-control'
