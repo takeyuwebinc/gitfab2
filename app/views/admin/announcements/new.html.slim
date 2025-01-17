@@ -1,0 +1,14 @@
+#admin-announcements-new
+  h2.h2 New announcement
+
+  - if @announcement.errors.any?
+    .alert.alert-danger
+      h6.h6.text-bold お知らせを登録できませんでした
+      ul
+        - @announcement.errors.full_messages.each do |message|
+          li = message
+
+  = form_with(model: [:admin, @announcement], local: true) do |form|
+    = render partial: "form", locals: { form: }
+
+    = form.submit '登録', class: 'btn btn-primary'

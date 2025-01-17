@@ -33,6 +33,7 @@ Rails.application.routes.draw do
       resource :spam_batch, only: :create
     end
     resources :spammers, only: %i[index destroy]
+    resources :announcements
   end
 
   root 'projects#index'

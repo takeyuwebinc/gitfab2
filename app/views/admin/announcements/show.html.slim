@@ -1,0 +1,42 @@
+#admin-announcements-show
+  h2.h2 Manage announcement
+
+  table.table
+    tr
+      th
+        = Announcement.human_attribute_name :title_ja
+      td
+        = @announcement.title_ja.html_safe
+    tr
+      th
+        = Announcement.human_attribute_name :title_en
+      td
+        = @announcement.title_en.html_safe
+    tr
+      th
+        = Announcement.human_attribute_name :content_ja
+      td
+        = @announcement.content_ja.html_safe
+    tr
+      th
+        = Announcement.human_attribute_name :content_en
+      td
+        = @announcement.content_en.html_safe
+    tr
+      th
+        = Announcement.human_attribute_name :start_at
+      td
+        =l @announcement.start_at
+    tr
+      th
+        = Announcement.human_attribute_name :end_at
+      td
+        =l @announcement.end_at
+    tr
+      th
+        = Announcement.human_attribute_name :created_at
+      td
+        =l @announcement.created_at
+
+  = link_to '編集', edit_admin_announcement_path(@announcement), class: 'btn btn-warning'
+  = link_to '削除', admin_announcement_path(@announcement), method: :delete, data: { confirm: '本当に削除しますか？' }, class: 'btn btn-danger'

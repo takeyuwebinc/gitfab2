@@ -1,0 +1,27 @@
+#admin-announcements-index
+  h2.h2 Announcements
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  div style="margin: 30px auto"
+    = link_to '新規お知らせ', new_admin_announcement_path, class: "btn btn-primary btn-sm"
+
+  table.table
+    thead
+      tr
+        th = Announcement.human_attribute_name :title_ja
+        th = Announcement.human_attribute_name :start_at
+        th = Announcement.human_attribute_name :end_at
+        th Manage
+    tbody
+      - @announcements.each do |announcement|
+        tr
+          td = announcement.title_ja.html_safe
+          td =l announcement.start_at
+          td =l announcement.end_at
+          td
+            = link_to '表示', admin_announcement_path(announcement), class: 'btn btn-info'
+            = link_to '編集', edit_admin_announcement_path(announcement), class: 'btn btn-warning'
+            = link_to '削除', admin_announcement_path(announcement), method: :delete, data: { confirm: '本当に削除しますか？' }, class: 'btn btn-danger'
