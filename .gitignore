@@ -57,6 +57,7 @@ public/javascripts/dist/
 app/assets/build
 
 /.kamal/secrets-common
+/config/deploy.*.yml
 
 /config/credentials/development.key
 /config/credentials/production.key

@@ -69,10 +69,127 @@ $ ssh gitfab2.host
 ```~/.ssh/config
 Host  gitfab2.host
         HostName 123.456.789.012
-        User deploy
+        User deployuser
         Port 22
         IdentitiesOnly yes
-        IdentityFile ~/.ssh/fabble2024.deploy.id_ed25519
+        IdentityFile ~/.ssh/deployuser.deploy.id_ed25519
+```
+
+### Remote Host
+#### Docker
+```bash
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+sudo usermod -aG docker deployuser
+su deployuser
+id
+docker run hello-world
+```
+
+userns-remapを有効にする
+
+```bash
+vi /etc/docker/daemon.json
+id deployuser
+uid=1001(deployuser) gid=1001(deployuser) groups=1001(deployuser),100(users),988(docker)
+vi /etc/subuid
+vi /etc/subgid
+systemctl restart docker
+```
+
+```json:/etc/docker/daemon.json
+{
+  "userns-remap": "deployuser"
+}
+```
+
+```/etc/subuid
+deployuser:1001:65536
+```
+
+```/etc/subgid
+deployuser:1001:65536
+```
+
+#### postfix
+```bash
+apt-get install -y postfix
+vi /etc/aliases
+newaliases
+vi /etc/postfix/main.cf
+```
+
+```
+# mynetworks に追加 (Docker 172.0.0.0/8)
+mynetworks = 127.0.0.0/8 172.0.0.0/8
+
+# ローカルネットワークからの送信を認証なしにする、など
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, defer_unauth_destination
+```
+
+#### rsyslog
+```bash
+apt-get install rsyslog
+systemctl status rsyslog
+mkdir /var/log/kamal
+chown syslog:adm /var/log/kamal
+chmod 750 /var/log/kamal
+vi /etc/rsyslog.conf
+vi /etc/rsyslog.d/00-kamal.conf
+systemctl restart rsyslog
+vi /etc/logrotate.d/kamal.conf
+logrotate -f /etc/logrotate.d/kamal.conf
+```
+
+```/etc/rsyslog.conf
+# provides UDP syslog reception
+# 自分自身、ローカルネットワーク、Dockerネットワークからの接続を許可
+module(load="imudp")
+input(type="imudp" port="514")
+$AllowedSender UDP, 127.0.0.1, 172.17.0.0/16, 172.18.0.0/16
+```
+
+```/etc/rsyslog.d/00-kamal.conf
+:programname, contains, "web" /var/log/kamal/web.log
+&stop
+:programname, contains, "job" /var/log/kamal/job.log
+&stop
+:programname, contains, "cron" /var/log/kamal/cron.log
+&stop
+:programname, contains, "db" /var/log/kamal/db.log
+&stop
+:programname, contains, "proxy" /var/log/kamal/proxy.log
+&stop
+```
+
+```/etc/logrotate.d/kamal.conf
+/var/log/kamal/*.log {
+        rotate 180
+        daily
+        missingok
+        notifempty
+        compress
+        delaycompress
+        create 0640 syslog adm
+        sharedscripts
+        postrotate
+                /usr/lib/rsyslog/rsyslog-rotate
+        endscript
+}
 ```
 
 ### Install Kamal
@@ -94,14 +211,55 @@ if [ -z "$SSH_AUTH_SOCK" ]; then
    eval `cat $HOME/.ssh/ssh-agent`
 fi
 
-ssh-add $HOME/.ssh/deploy.id_ed25519
+ssh-add $HOME/.ssh/deployuser.id_ed25519
 
 alias kamal='docker run -it --rm -v "${PWD}:/workdir" -v "${SSH_AUTH_SOCK}:/ssh-agent" -v /var/run/docker.sock:/var/run/docker.sock -e "SSH_AUTH_SOCK=/ssh-agent" ghcr.io/basecamp/kamal:latest'
 ```
 
-### Deploy
+### Configuration
 ```bash
-$ kamal deploy
+$ cp .kamal/secrets-common.sample .kamal/secrets-common
+$ vi .kamal/secrets-common
+$ vi config/deploy.production.yml
+```
+
+```yml:config/deploy.production.yml
+image: your-dockerhub-username/gitfab2
+registry:
+  username: your-dockerhub-username
+image: takeyuweb/gitfab2
+servers:
+  web:
+    hosts:
+      - 123.456.789.012
+  job:
+    hosts:
+      - 123.456.789.012
+  cron:
+    hosts:
+      - 123.456.789.012
+proxy:
+  ssl: true
+  host: gitfab2.host
+ssh:
+  user: deployuser
+  port: 22
+accessories:
+  db:
+    host: 123.456.789.012
+```
+
+### Deploy
+アクセサリ（MySQL）を起動
+
+```bash
+$ kamal accessory boot all -d production
+```
+
+アプリをデプロイ
+
+```bash
+$ kamal deploy -d production
 ```
 
 ## License
