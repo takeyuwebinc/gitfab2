@@ -8,7 +8,7 @@ RUN apt-get update -qq \
     nodejs npm vim \
     povray povray-includes \
     imagemagick libvips libimage-exiftool-perl \
-    cron sudo \
+    cron \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -60,15 +60,4 @@ FROM base
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build $WORKDIR $WORKDIR
 
-ARG USERNAME=ruby
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-RUN groupadd --gid $USER_GID $USERNAME && \
-    useradd -m --shell /bin/bash --uid $USER_UID --gid $USER_GID $USERNAME && \
-    mkdir public/uploads && \
-    chown -R $USERNAME:$USERNAME db log tmp public/uploads
-
-#USER $USERNAME:$USERNAME
-
 EXPOSE 3000
-#CMD ["bundle", "exec", "unicorn_rails", "-c", "config/unicorn.rb"]

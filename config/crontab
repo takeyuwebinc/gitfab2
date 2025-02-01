@@ -1,3 +1,3 @@
-0 5 * * * sudo -u deploy bash -c 'source /tmp/cron.env.sh && cd /app && bundle exec rails backup:delete' > /proc/1/fd/1 2>&1
-30 0 * * * sudo -u deploy bash -c 'source /tmp/cron.env.sh && cd /app && bundle exec rails statistic:daily' > /proc/1/fd/1 2>&1
-0 * * * * sudo -u deploy bash -c 'source /tmp/cron.env.sh && cd /app && bundle exec rails runner "Rails.cache.clear"' > /proc/1/fd/1 2>&1
+0 5 * * * . /etc/profile; cd /app && bundle exec rails backup:delete > /proc/1/fd/1 2>&1
+30 0 * * * . /etc/profile; cd /app && bundle exec rails statistic:daily > /proc/1/fd/1 2>&1
+0 * * * * . /etc/profile; cd /app && bundle exec rails runner "Rails.cache.clear" > /proc/1/fd/1 2>&1
