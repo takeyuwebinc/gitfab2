@@ -1,8 +1,0 @@
-- if Rails.env.production?
-  javascript:
-    !function(F,a,B,b,l,e){F.GoogleAnalyticsObject=B;F[B]||(F[B]=function(){
-    (F[B].q=F[B].q||[]).push(arguments)});F[B].l=+new Date;l=a.createElement(b);
-    e=a.getElementsByTagName(b)[0];l.src='//www.google-analytics.com/analytics.js';
-    e.parentNode.insertBefore(l,e)}(window,document,'ga','script');
-    ga('create', '#{KEYS["analytics_id"]}', 'auto');
-    ga('send', 'pageview');
