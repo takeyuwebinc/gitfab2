@@ -129,8 +129,8 @@ accessories:
     files:
       - config/mysql/production.cnf:/etc/mysql/my.cnf
       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-    directories:
-      - data:/var/lib/mysql
+    volumes:
+      - "/data/mysql:/var/lib/mysql"
     options:
       log-driver: syslog
       log-opt:
