@@ -220,6 +220,7 @@ alias kamal='docker run -it --rm -v "${PWD}:/workdir" -v "${SSH_AUTH_SOCK}:/ssh-
 ```bash
 $ cp .kamal/secrets-common.sample .kamal/secrets-common
 $ vi .kamal/secrets-common
+$ cp config/deploy.production.yml.sample config/deploy.production.yml
 $ vi config/deploy.production.yml
 ```
 
@@ -227,7 +228,6 @@ $ vi config/deploy.production.yml
 image: your-dockerhub-username/gitfab2
 registry:
   username: your-dockerhub-username
-image: takeyuweb/gitfab2
 servers:
   web:
     hosts:

@@ -1,0 +1,22 @@
+image: your-dockerhub-username/gitfab2
+registry:
+  username: your-dockerhub-username
+servers:
+  web:
+    hosts:
+      - 123.456.789.012
+  job:
+    hosts:
+      - 123.456.789.012
+  cron:
+    hosts:
+      - 123.456.789.012
+proxy:
+  ssl: true
+  host: gitfab2.host
+ssh:
+  user: deployuser
+  port: 22
+accessories:
+  db:
+    host: 123.456.789.012
