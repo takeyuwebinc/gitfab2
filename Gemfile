@@ -74,6 +74,7 @@ group :development do
   gem 'rack-mini-profiler', require: false
   gem 'web-console'
   gem 'listen'
+  gem 'kamal'
 end
 
 group :test do

@@ -193,27 +193,12 @@ $AllowedSender UDP, 127.0.0.1, 172.17.0.0/16, 172.18.0.0/16
 ```
 
 ### Install Kamal
-https://kamal-deploy.org/docs/installation/
+Gemfile の development グループに記載されているため、別途インストールは不要
 
-#### Ubuntu on WSL2
-```~/.bashrc
-if [[ -f ~/.bashrc ]] ; then
-    . ~/.bashrc
-fi
-
-if [ -z "$SSH_AUTH_SOCK" ]; then
-   # Check for a currently running instance of the agent
-   RUNNING_AGENT="`ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]'`"
-   if [ "$RUNNING_AGENT" = "0" ]; then
-        # Launch a new instance of the agent
-        ssh-agent -s &> $HOME/.ssh/ssh-agent
-   fi
-   eval `cat $HOME/.ssh/ssh-agent`
-fi
-
-ssh-add $HOME/.ssh/deployuser.id_ed25519
-
-alias kamal='docker run -it --rm -v "${PWD}:/workdir" -v "${SSH_AUTH_SOCK}:/ssh-agent" -v /var/run/docker.sock:/var/run/docker.sock -e "SSH_AUTH_SOCK=/ssh-agent" ghcr.io/basecamp/kamal:latest'
+```bash
+$ bundle install
+$ kamal version
+$ bundle exec kamal version
 ```
 
 ### Configuration
@@ -253,13 +238,13 @@ accessories:
 アクセサリ（MySQL）を起動
 
 ```bash
-$ kamal accessory boot all -d production
+$ bundle exec kamal accessory boot all -d production
 ```
 
 アプリをデプロイ
 
 ```bash
-$ kamal deploy -d production
+$ bundle exec kamal deploy -d production
 ```
 
 ## License
