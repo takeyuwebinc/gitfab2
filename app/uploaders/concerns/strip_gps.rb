@@ -15,6 +15,6 @@ module StripGps
   end
 
   def jpeg?(carrier_wave_sanitized_file)
-    MimeMagic.by_path(carrier_wave_sanitized_file.path).type == "image/jpeg"
+    MimeMagic.by_path(carrier_wave_sanitized_file.path)&.type == "image/jpeg"
   end
 end
