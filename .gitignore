@@ -56,6 +56,8 @@ gemfiles/*.lock
 public/javascripts/dist/
 app/assets/build
 
+/.kamal/secrets.*
+!/.kamal/secrets.*.sample
 /.kamal/secrets-common
 /config/deploy.yml
 /config/deploy.*.yml
