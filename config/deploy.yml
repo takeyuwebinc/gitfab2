@@ -19,7 +19,7 @@ servers:
         syslog-format: rfc5424
   cron:
     cmd:
-      bash -c "eval \$(printenv | awk -F= '{print \"export \" \"\\\"\"\$1\"\\\"\"\"=\"\"\\\"\"\$2\"\\\"\" }' >> /etc/profile); cat config/crontab | crontab - && cron -f"
+      bash -c "eval \$(printenv | awk -F= '{print \"export \" \"\\\"\"\$1\"\\\"\"\"=\"\"\\\"\"\$2\"\\\"\" }' >> /etc/environment); cat config/crontab | crontab - && cron -f"
     logging:
       driver: syslog
       options:

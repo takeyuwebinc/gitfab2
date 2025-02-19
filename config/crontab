@@ -1,3 +1,6 @@
-0 5 * * * . /etc/profile; cd /app && bundle exec rails backup:delete > /proc/1/fd/1 2>&1
-30 0 * * * . /etc/profile; cd /app && bundle exec rails statistic:daily > /proc/1/fd/1 2>&1
-0 * * * * . /etc/profile; cd /app && bundle exec rails runner "Rails.cache.clear" > /proc/1/fd/1 2>&1
+SHELL=/bin/bash
+BASH_ENV=/etc/environment
+
+0 5 * * * cd /app && bundle exec rails backup:delete > /proc/1/fd/1 2>&1
+30 0 * * * cd /app && bundle exec rails statistic:daily > /proc/1/fd/1 2>&1
+0 * * * * cd /app && bundle exec rails runner "Rails.cache.clear" > /proc/1/fd/1 2>&1
