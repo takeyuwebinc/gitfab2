@@ -14,7 +14,8 @@ if [ -z "$KAMAL_DESTINATION" ]; then
       log-opt=syslog-facility=daemon \
       log-opt=tag=proxy \
       log-opt=syslog-format=rfc5424 \
-      userns=host
+      userns=host \
+    --log-max-size=""
 else
   kamal proxy -d "$KAMAL_DESTINATION" boot_config set \
     --docker_options \
@@ -23,5 +24,6 @@ else
       log-opt=syslog-facility=daemon \
       log-opt=tag=proxy \
       log-opt=syslog-format=rfc5424 \
-      userns=host
+      userns=host \
+    --log-max-size=""
 fi
