@@ -7,7 +7,7 @@ image: xxxxxxxx/gitfab2
 # Deploy to these servers.
 servers:
   web:
-    cmd: bundle exec unicorn_rails -c config/unicorn.rb
+    cmd: bash -c "rm -f tmp/pids/server.pid; bundle exec unicorn_rails -c config/unicorn.rb"
   job:
     cmd: bin/delayed_job run
     logging:
