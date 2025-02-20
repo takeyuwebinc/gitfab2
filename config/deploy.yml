@@ -140,3 +140,4 @@ accessories:
         - syslog-facility=daemon
         - tag=db
         - syslog-format=rfc5424
+      cap-add: sys_nice
