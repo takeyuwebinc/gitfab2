@@ -14,7 +14,9 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
-  "containerEnv": {},
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/ruby/.claude"
+  },
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [
     3000
@@ -23,12 +25,18 @@
   // "customizations": {},
   "customizations": {
     "vscode": {
-      "extensions": [],
+      "extensions": [
+        "anthropic.claude-code"
+      ],
       "settings": {}
     }
   },
   // Uncomment to connect as root instead. More info: https://containers.dev/implementors/json_reference/#remoteUser.
-  // "remoteUser": "root",
+  "remoteUser": "ruby",
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/ruby/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude.json,target=/home/ruby/.claude.json,type=bind,consistency=cached"
+  ],
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "cp config/database.ymls/development.yml config/database.yml"
+  "postCreateCommand": ".devcontainer/claude-setup.sh && cp config/database.ymls/development.yml config/database.yml"
 }
