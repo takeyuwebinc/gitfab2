@@ -15,7 +15,11 @@ Rails.application.routes.draw do
     resources :features do
       resources :featured_items
     end
-    resources :projects, via: %i(get put delete)
+    resources :projects, via: %i(get put delete) do
+      collection do
+        post :batch_spam
+      end
+    end
     get 'background', to: 'background#index', as: :background
     put 'background', to: 'background#update'
     resources :black_lists, except: [:edit, :update]
