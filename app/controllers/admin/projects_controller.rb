@@ -2,7 +2,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   before_action :load_project, only: [:show, :destroy]
 
   def index
-    @projects = Project.published
+    @projects = Project.published.order(created_at: :desc)
     @projects = @projects.search_draft(params[:q]) if params[:q]
     @projects = @projects.page(params[:page])
   end
