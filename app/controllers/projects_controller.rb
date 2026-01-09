@@ -39,6 +39,13 @@ class ProjectsController < ApplicationController
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug
 
+    recaptcha_result = RecaptchaVerificationService.new(request).verify(action: "project")
+    if recaptcha_result.failure?
+      flash.now[:alert] = recaptcha_result.error_message
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     if @project.save
       redirect_to edit_project_path(@owner, @project)
     else

@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root 'dashboard#index'
+    resource :system_settings, only: [:edit, :update]
     resources :features do
       resources :featured_items
     end

@@ -1,5 +1,10 @@
 - url = @project.new_record? ? projects_path : project_path(@project.owner, @project)
 = nested_form_for @project, url: url, html: {class: "project-form"} do |f|
+  noscript
+    .alert.alert-warning
+      | This site requires JavaScript to be enabled. Please enable JavaScript in your browser settings.
+  - if @project.new_record? && Recaptcha.configuration.site_key.present?
+    = recaptcha_v3(action: "project", id: "recaptcha_token_project")
   - if flash[:alert]
     .alert.alert-danger= flash[:alert]
   - if @project.errors.any?
