@@ -36,6 +36,7 @@ gem "cmath"
 gem "net-http"
 gem "csv"
 gem "mini_exiftool"
+gem "recaptcha"
 
 # Frontend
 gem 'autoprefixer-rails'
@@ -82,6 +83,7 @@ group :test do
   gem 'database_cleaner-active_record'
   gem 'rails-controller-testing'
   gem 'simplecov', require: false
+  gem 'webmock'
 end
 
 group :production, :staging do

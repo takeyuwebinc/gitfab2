@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_01_17_083917) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_09_014517) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -255,6 +255,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_01_17_083917) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_spammers_on_user_id", unique: true
+  end
+
+  create_table "system_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "システム設定", force: :cascade do |t|
+    t.string "key", null: false, comment: "設定キー（一意）"
+    t.text "value", comment: "設定値"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_system_settings_on_key", unique: true
   end
 
   create_table "tags", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|

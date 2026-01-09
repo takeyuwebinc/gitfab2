@@ -169,12 +169,14 @@ describe ProjectsController, type: :controller do
         it { is_expected.to render_template :edit }
       end
       describe 'POST create' do
+        before { stub_recaptcha_verification_success }
+
         context 'when newly creating' do
           let(:user) { FactoryBot.create :user }
           let(:new_project) { FactoryBot.build(:user_project, original: nil) }
           before do
             sign_in user
-            post :create, params: { project: new_project.attributes.merge(owner_id: user.slug) }
+            post :create, params: { project: new_project.attributes.merge(owner_id: user.slug), "g-recaptcha-response-data" => { "project" => "token" } }
           end
           it { is_expected.to redirect_to(edit_project_path(id: assigns(:project), owner_name: user)) }
         end
@@ -185,17 +187,72 @@ describe ProjectsController, type: :controller do
             sign_in user
             wrong_parameters = new_project.attributes
             wrong_parameters['title'] = ''
-            post :create, params: { project: wrong_parameters.merge(owner_id: user.slug) }
+            post :create, params: { project: wrong_parameters.merge(owner_id: user.slug), "g-recaptcha-response-data" => { "project" => "token" } }
           end
           it { is_expected.to render_template :new }
         end
         context 'without owner_id' do
-          subject { post :create, params: { project: new_project.attributes } }
+          subject { post :create, params: { project: new_project.attributes, "g-recaptcha-response-data" => { "project" => "token" } } }
           let(:user) { FactoryBot.create :user }
           let(:new_project) { FactoryBot.build(:user_project, original: nil, owner: nil) }
           before { sign_in user }
           it { is_expected.to redirect_to(edit_project_path(id: assigns(:project), owner_name: user)) }
           it { expect { subject }.to change(Project, :count).by(1) }
+        end
+
+        context 'reCAPTCHA verification' do
+          let(:user) { FactoryBot.create :user }
+          let(:new_project) { FactoryBot.build(:user_project, original: nil) }
+          let(:project_params) { new_project.attributes.merge(owner_id: user.slug) }
+          let(:recaptcha_params) { { "g-recaptcha-response-data" => { "project" => "test_token" } } }
+
+          before { sign_in user }
+
+          context 'when verification succeeds' do
+            before { stub_recaptcha_verification_success }
+
+            it 'creates the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.to change(Project, :count).by(1)
+            end
+          end
+
+          context 'when verification fails' do
+            before { stub_recaptcha_verification_failure }
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.not_to change(Project, :count)
+            end
+
+            it 'renders new template with unprocessable_entity status' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(response).to render_template(:new)
+              expect(response).to have_http_status(:unprocessable_entity)
+            end
+
+            it 'sets flash alert' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(flash[:alert]).to eq I18n.t("recaptcha.errors.verification_failed")
+            end
+          end
+
+          context 'when reCAPTCHA token is missing' do
+            before { stub_recaptcha_configured }
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }
+              }.not_to change(Project, :count)
+            end
+
+            it 'sets flash alert for missing token' do
+              post :create, params: { project: project_params }
+              expect(flash[:alert]).to eq I18n.t("recaptcha.errors.token_missing")
+            end
+          end
         end
       end
 

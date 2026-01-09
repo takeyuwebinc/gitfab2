@@ -31,3 +31,7 @@
 
 en:
   hello: "Hello world"
+  recaptcha:
+    errors:
+      token_missing: "JavaScript must be enabled to post a project."
+      verification_failed: "Your request was identified as automated. Please try again."
