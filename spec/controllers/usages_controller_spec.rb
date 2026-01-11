@@ -65,7 +65,7 @@ describe UsagesController, type: :controller do
       it 'タイトルにスパムキーワードを含む場合は拒否されること' do
         post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'Visit casino now', description: 'desc' } }, xhr: true
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
       end
 
       it '説明にスパムキーワードを含む場合は拒否されること' do
@@ -134,7 +134,7 @@ describe UsagesController, type: :controller do
           params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'Visit casino now', description: 'new_desc' } },
           xhr: true
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
       end
 
       it '説明にスパムキーワードを含む場合は拒否されること' do

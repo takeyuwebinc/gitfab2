@@ -114,7 +114,7 @@ describe StatesController, type: :controller do
             },
             xhr: true
           expect(response).to have_http_status(:unprocessable_entity)
-          expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+          expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
         end
 
         it '説明にスパムキーワードを含む場合は拒否されること' do
@@ -248,7 +248,7 @@ describe StatesController, type: :controller do
             },
             xhr: true
           expect(response).to have_http_status(:unprocessable_entity)
-          expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+          expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
         end
 
         it '説明にスパムキーワードを含む場合は拒否されること' do

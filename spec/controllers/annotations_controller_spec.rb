@@ -78,7 +78,7 @@ describe AnnotationsController, type: :controller do
           params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'Visit casino now', description: 'ann' } },
           xhr: true
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
       end
 
       it '説明にスパムキーワードを含む場合は拒否されること' do
@@ -191,7 +191,7 @@ describe AnnotationsController, type: :controller do
           },
           xhr: true
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
       end
 
       it '説明にスパムキーワードを含む場合は拒否されること' do

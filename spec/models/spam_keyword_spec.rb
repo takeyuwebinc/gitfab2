@@ -94,7 +94,7 @@ RSpec.describe SpamKeyword do
       it '伏字付きのメッセージを返すこと' do
         spam_keyword = SpamKeyword.new(keyword: 'casino')
         expect(spam_keyword.rejection_message).to include('c****o')
-        expect(spam_keyword.rejection_message).to include('禁止されているキーワード')
+        expect(spam_keyword.rejection_message).to include('prohibited keyword')
       end
     end
 
@@ -102,7 +102,7 @@ RSpec.describe SpamKeyword do
       it '伏字なしのメッセージを返すこと' do
         spam_keyword = SpamKeyword.new(keyword: 'abc')
         expect(spam_keyword.rejection_message).not_to include('abc')
-        expect(spam_keyword.rejection_message).to include('禁止されているキーワードが含まれているため')
+        expect(spam_keyword.rejection_message).to include('prohibited keyword')
       end
     end
   end

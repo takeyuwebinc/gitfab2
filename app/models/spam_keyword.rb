@@ -19,9 +19,9 @@ class SpamKeyword < ApplicationRecord
   def rejection_message
     masked = masked_keyword
     if masked
-      "禁止されているキーワード「#{masked}」が含まれているため、投稿できませんでした。内容を修正してください。"
+      "Your post contains a prohibited keyword \"#{masked}\" and could not be submitted. Please modify the content."
     else
-      "禁止されているキーワードが含まれているため、投稿できませんでした。内容を修正してください。"
+      "Your post contains a prohibited keyword and could not be submitted. Please modify the content."
     end
   end
 

@@ -103,7 +103,7 @@ describe ProjectCommentsController, type: :controller do
 
       it 'エラーメッセージが表示されること' do
         subject
-        expect(flash[:alert]).to include('禁止されているキーワード')
+        expect(flash[:alert]).to include('prohibited keyword')
       end
 
       it '入力内容が保持されること' do

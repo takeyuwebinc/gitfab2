@@ -55,7 +55,7 @@ describe CardCommentsController, type: :controller do
       it 'エラーが返されること' do
         is_expected.to have_http_status(:unprocessable_entity)
         response_body = JSON.parse(response.body)
-        expect(response_body["message"][""]).to include('禁止されているキーワード')
+        expect(response_body["message"][""]).to include('prohibited keyword')
       end
 
       it 'コメントが作成されないこと' do
