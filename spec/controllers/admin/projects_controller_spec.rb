@@ -22,6 +22,62 @@ RSpec.describe Admin::ProjectsController, type: :controller do
     end
   end
 
+  describe 'DELETE #destroy' do
+    subject { delete :destroy, params: { id: project.id } }
+
+    let!(:project) { create(:project) }
+
+    context 'with authority' do
+      let(:authority) { 'admin' }
+
+      context 'when spam designation succeeds' do
+        let(:result) { SpamDesignationService::Result.new(success: 1, failed: [], errors: {}) }
+
+        before do
+          allow(SpamDesignationService).to receive(:call).and_return(result)
+        end
+
+        it 'calls SpamDesignationService with the project' do
+          subject
+          expect(SpamDesignationService).to have_received(:call) do |projects|
+            expect(projects.map(&:id)).to eq [project.id]
+          end
+        end
+
+        it 'redirects to index with success notice' do
+          subject
+          expect(response).to redirect_to(admin_projects_path)
+          expect(flash[:notice]).to eq 'プロジェクトをスパム認定しました'
+        end
+      end
+
+      context 'when spam designation fails' do
+        let(:result) { SpamDesignationService::Result.new(success: 0, failed: [project], errors: { project.id => '処理に失敗しました' }) }
+
+        before do
+          allow(SpamDesignationService).to receive(:call).and_return(result)
+        end
+
+        it 'redirects to index with alert' do
+          subject
+          expect(response).to redirect_to(admin_projects_path)
+          expect(flash[:alert]).to eq 'スパム認定に失敗しました'
+        end
+      end
+    end
+
+    context 'without authority' do
+      let(:authority) { nil }
+
+      it 'does not call SpamDesignationService' do
+        expect(SpamDesignationService).not_to receive(:call)
+        subject
+      end
+
+      it { is_expected.to redirect_to root_path }
+    end
+  end
+
   describe 'POST #batch_spam' do
     subject { post :batch_spam, params: params }
 
