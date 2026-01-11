@@ -51,6 +51,34 @@ describe UsagesController, type: :controller do
         expect(project.usages.count).to eq 0
       end
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+
+      before do
+        sign_in owner
+        project.usages.destroy_all
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'Visit casino now', description: 'desc' } }, xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'title', description: 'Visit casino now' } }, xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Usageが作成されないこと' do
+        expect {
+          post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'Visit casino now', description: 'desc' } }, xhr: true
+        }.not_to change(Card::Usage, :count)
+      end
+    end
   end
 
   describe 'PATCH update' do
@@ -89,6 +117,41 @@ describe UsagesController, type: :controller do
           xhr: true
       end
       it { is_expected.to_not render_template :update }
+    end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let!(:usage) { FactoryBot.create(:usage, project: project, title: 'foo', description: 'bar') }
+
+      before do
+        sign_in owner
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'Visit casino now', description: 'new_desc' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'new_title', description: 'Visit casino now' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Usageが更新されないこと' do
+        original_title = usage.title
+        patch :update,
+          params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'Visit casino now', description: 'new_desc' } },
+          xhr: true
+        usage.reload
+        expect(usage.title).to eq(original_title)
+      end
     end
   end
 

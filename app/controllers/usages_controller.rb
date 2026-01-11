@@ -1,4 +1,6 @@
 class UsagesController < ApplicationController
+  include SpamKeywordDetection
+
   before_action :load_owner
   before_action :load_project
   before_action :build_usage, only: [:new, :create]
@@ -14,6 +16,11 @@ class UsagesController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@usage.title, @usage.description], content_type: "Usage")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     if @usage.save
       @project.touch
       render :create
@@ -23,8 +30,14 @@ class UsagesController < ApplicationController
   end
 
   def update
-    auto_linked_params = usage_params
-    if @usage.update auto_linked_params
+    @usage.assign_attributes(usage_params)
+
+    if detect_spam_keyword(contents: [@usage.title, @usage.description], content_type: "Usage")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
+    if @usage.save
       @project.touch
       render :update
     else
