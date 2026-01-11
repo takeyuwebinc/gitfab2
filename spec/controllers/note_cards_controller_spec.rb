@@ -81,6 +81,33 @@ describe NoteCardsController, type: :controller do
         expect(project.note_cards.count).to eq 0
       end
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+
+      before do
+        sign_in(user)
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        post :create, params: { owner_name: user, project_id: project, note_card: { title: 'Visit casino now', description: 'desc' } }, xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        post :create, params: { owner_name: user, project_id: project, note_card: { title: 'title', description: 'Visit casino now' } }, xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'NoteCardが作成されないこと' do
+        expect {
+          post :create, params: { owner_name: user, project_id: project, note_card: { title: 'Visit casino now', description: 'desc' } }, xhr: true
+        }.not_to change(Card::NoteCard, :count)
+      end
+    end
   end
 
   describe 'PATCH update' do
@@ -153,6 +180,40 @@ describe NoteCardsController, type: :controller do
       it { expect(JSON.parse(response.body, symbolize_names: true)).to eq({ success: false }) }
       it 'does not change a note card' do
         expect(note_card.title).to_not eq title_to_change
+      end
+    end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+
+      before do
+        sign_in(user)
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: { owner_name: user, project_id: project, id: note_card.id, note_card: { title: 'Visit casino now', description: 'new_desc' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: { owner_name: user, project_id: project, id: note_card.id, note_card: { title: 'new_title', description: 'Visit casino now' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'NoteCardが更新されないこと' do
+        original_title = note_card.title
+        patch :update,
+          params: { owner_name: user, project_id: project, id: note_card.id, note_card: { title: 'Visit casino now', description: 'new_desc' } },
+          xhr: true
+        note_card.reload
+        expect(note_card.title).to eq(original_title)
       end
     end
   end
