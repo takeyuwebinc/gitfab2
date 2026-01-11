@@ -62,6 +62,40 @@ describe AnnotationsController, type: :controller do
         it { expect { subject }.to_not change(Card::Annotation, :count) }
       end
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let!(:state) { project.states.create type: Card::State.name, description: 'foo' }
+
+      before do
+        sign_in(FactoryBot.create(:user))
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'Visit casino now', description: 'ann' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'foo', description: 'Visit casino now' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Annotationが作成されないこと' do
+        expect {
+          post :create,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'Visit casino now', description: 'ann' } },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+    end
   end
 
   describe 'PATCH #update' do
@@ -134,6 +168,52 @@ describe AnnotationsController, type: :controller do
             xhr: true
         end
         it { is_expected.to render_template :update }
+      end
+    end
+
+    context 'スパムキーワードを含む場合' do
+      let(:current_user) { user }
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let!(:state) { FactoryBot.create(:state, project: project) }
+      let!(:annotation) { FactoryBot.create(:annotation, state: state) }
+
+      before do
+        sign_in(current_user)
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'Visit casino now', description: 'new_desc' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('禁止されているキーワード')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'new_title', description: 'Visit casino now' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Annotationが更新されないこと' do
+        original_description = annotation.description
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'Visit casino now', description: 'new_desc' }
+          },
+          xhr: true
+        annotation.reload
+        expect(annotation.description).to eq(original_description)
       end
     end
 

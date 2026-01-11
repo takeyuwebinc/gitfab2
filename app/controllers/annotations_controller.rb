@@ -1,4 +1,6 @@
 class AnnotationsController < ApplicationController
+  include SpamKeywordDetection
+
   before_action :load_owner
   before_action :load_project
   before_action :load_state
@@ -20,6 +22,11 @@ class AnnotationsController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@annotation.title, @annotation.description], content_type: "Annotation")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     if @annotation.save
       render :create
     else
@@ -28,8 +35,14 @@ class AnnotationsController < ApplicationController
   end
 
   def update
-    auto_linked_params = annotation_params
-    if @annotation.update auto_linked_params
+    @annotation.assign_attributes(annotation_params)
+
+    if detect_spam_keyword(contents: [@annotation.title, @annotation.description], content_type: "Annotation")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
+    if @annotation.save
       render :update
     else
       render json: { success: false }, status: 400
