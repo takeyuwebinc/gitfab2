@@ -35,7 +35,7 @@ section#project-comments
             .right
               - if flash[:alert]
                 .alert.alert-danger
-                  - flash[:alert].each do |message|
+                  - Array(flash[:alert]).each do |message|
                     = message
               = f.text_area :body, size: "40x4", class: "comment-editor", value: flash[:project_comment_body]
               .actions = f.submit "comment", class: "btn"
