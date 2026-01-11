@@ -1,5 +1,6 @@
 class ProjectsController < ApplicationController
   include SpamKeywordDetection
+  include SpammerRestriction
 
   layout 'project'
 
@@ -40,6 +41,12 @@ class ProjectsController < ApplicationController
     @project = @owner.projects.build(project_params)
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug
+
+    # スパム投稿者の場合はサイレント拒否（処理優先順位: reCAPTCHA, スパムキーワードより優先）
+    if spammer_silent_reject?("project_create")
+      redirect_to spammer_redirect_path
+      return
+    end
 
     recaptcha_result = RecaptchaVerificationService.new(request).verify(action: "project")
     if recaptcha_result.failure?

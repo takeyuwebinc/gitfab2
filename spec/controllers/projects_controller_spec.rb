@@ -254,6 +254,76 @@ describe ProjectsController, type: :controller do
             end
           end
         end
+
+        context 'spammer restriction' do
+          let(:user) { FactoryBot.create :user }
+          let(:new_project) { FactoryBot.build(:user_project, original: nil) }
+          let(:project_params) { new_project.attributes.merge(owner_id: user.slug) }
+          let(:recaptcha_params) { { "g-recaptcha-response-data" => { "project" => "test_token" } } }
+
+          before do
+            sign_in user
+            stub_recaptcha_verification_success
+          end
+
+          context 'when user is a spammer' do
+            before { create(:spammer, user: user) }
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.not_to change(Project, :count)
+            end
+
+            it 'redirects to owner page (silent rejection)' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(response).to redirect_to(owner_path(owner_name: user.slug))
+            end
+
+            it 'does not show any flash message' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(flash[:notice]).to be_nil
+              expect(flash[:alert]).to be_nil
+            end
+
+            it 'logs the silent rejection' do
+              allow(Rails.logger).to receive(:info).and_call_original
+              expect(Rails.logger).to receive(:info).with(/\[SpammerRestriction\] Silent rejection: user_id=#{user.id}, action=project_create/).and_call_original
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+            end
+          end
+
+          context 'when user is not a spammer' do
+            it 'creates the project normally' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.to change(Project, :count).by(1)
+            end
+          end
+
+          context 'when spammer also triggers reCAPTCHA failure (spammer takes priority)' do
+            before do
+              create(:spammer, user: user)
+              stub_recaptcha_verification_failure
+            end
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.not_to change(Project, :count)
+            end
+
+            it 'redirects to owner page (silent rejection takes priority over reCAPTCHA error)' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(response).to redirect_to(owner_path(owner_name: user.slug))
+            end
+
+            it 'does not show reCAPTCHA error message' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(flash[:alert]).to be_nil
+            end
+          end
+        end
       end
 
       describe 'GET recipe_cards_list' do
