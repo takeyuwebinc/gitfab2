@@ -341,4 +341,90 @@ describe AnnotationsController, type: :controller do
     describe 'create_new_contribution' do
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:state) { FactoryBot.create(:state, project: project, annotations_count: 0) }
+    let(:annotation) { FactoryBot.create(:annotation, state: state) }
+
+    before do
+      sign_in user
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create an annotation' do
+        expect {
+          post :create,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation: { description: 'ann' } },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+
+      it 'returns 503' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { description: 'ann' } },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the annotation' do
+        original_description = annotation.description
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { description: 'new_ann' }
+          },
+          xhr: true
+        expect(annotation.reload.description).to eq(original_description)
+      end
+
+      it 'returns 503' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { description: 'new_ann' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the annotation' do
+        annotation # create it first
+        expect {
+          delete :destroy,
+            params: { owner_name: user, project_id: project, state_id: state.id, id: annotation.id },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy,
+          params: { owner_name: user, project_id: project, state_id: state.id, id: annotation.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'POST to_state' do
+      it 'does not convert annotation to state' do
+        annotation # create it first, before counting
+        expect {
+          post :to_state,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+            xhr: true
+        }.not_to change(Card::State, :count)
+      end
+
+      it 'returns 503' do
+        post :to_state,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

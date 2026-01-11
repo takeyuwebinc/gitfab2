@@ -36,10 +36,17 @@ const Like = (state: State) => [
       .then(response => {
         if (response.ok) {
           dispatch(SetIcon, true);
+          dispatch(Enable, true);
         } else {
+          response.json().then(data => {
+            const message = data.error || data.message || "An error occurred";
+            alert(message);
+          }).catch(() => {
+            alertError();
+          });
           dispatch(SetIcon, false);
+          dispatch(Enable, true);
         }
-        dispatch(Enable, true);
       }).catch(_ => {
         alertError();
         dispatch(Enable, true);
@@ -54,10 +61,17 @@ const Unlike = (state: State) => [
       .then(response => {
         if (response.ok) {
           dispatch(SetIcon, false);
+          dispatch(Enable, true);
         } else {
+          response.json().then(data => {
+            const message = data.error || data.message || "An error occurred";
+            alert(message);
+          }).catch(() => {
+            alertError();
+          });
           dispatch(SetIcon, true);
+          dispatch(Enable, true);
         }
-        dispatch(Enable, true);
       }).catch(_ => {
         alertError();
         dispatch(Enable, true);

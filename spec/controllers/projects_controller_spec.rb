@@ -254,6 +254,76 @@ describe ProjectsController, type: :controller do
             end
           end
         end
+
+        context 'spammer restriction' do
+          let(:user) { FactoryBot.create :user }
+          let(:new_project) { FactoryBot.build(:user_project, original: nil) }
+          let(:project_params) { new_project.attributes.merge(owner_id: user.slug) }
+          let(:recaptcha_params) { { "g-recaptcha-response-data" => { "project" => "test_token" } } }
+
+          before do
+            sign_in user
+            stub_recaptcha_verification_success
+          end
+
+          context 'when user is a spammer' do
+            before { create(:spammer, user: user) }
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.not_to change(Project, :count)
+            end
+
+            it 'redirects to owner page (silent rejection)' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(response).to redirect_to(owner_path(owner_name: user.slug))
+            end
+
+            it 'does not show any flash message' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(flash[:notice]).to be_nil
+              expect(flash[:alert]).to be_nil
+            end
+
+            it 'logs the silent rejection' do
+              allow(Rails.logger).to receive(:info).and_call_original
+              expect(Rails.logger).to receive(:info).with(/\[SpammerRestriction\] Silent rejection: user_id=#{user.id}, action=project_create/).and_call_original
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+            end
+          end
+
+          context 'when user is not a spammer' do
+            it 'creates the project normally' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.to change(Project, :count).by(1)
+            end
+          end
+
+          context 'when spammer also triggers reCAPTCHA failure (spammer takes priority)' do
+            before do
+              create(:spammer, user: user)
+              stub_recaptcha_verification_failure
+            end
+
+            it 'does not create the project' do
+              expect {
+                post :create, params: { project: project_params }.merge(recaptcha_params)
+              }.not_to change(Project, :count)
+            end
+
+            it 'redirects to owner page (silent rejection takes priority over reCAPTCHA error)' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(response).to redirect_to(owner_path(owner_name: user.slug))
+            end
+
+            it 'does not show reCAPTCHA error message' do
+              post :create, params: { project: project_params }.merge(recaptcha_params)
+              expect(flash[:alert]).to be_nil
+            end
+          end
+        end
       end
 
       describe 'GET recipe_cards_list' do
@@ -764,5 +834,150 @@ describe ProjectsController, type: :controller do
     subject { get :slideshow, params: { owner_name: project.owner, project_id: project } }
     let(:project) { FactoryBot.create(:project) }
     it { is_expected.to be_successful }
+  end
+
+  describe 'readonly mode restriction' do
+    let(:user) { FactoryBot.create(:user) }
+    let(:project) { FactoryBot.create(:user_project, owner: user) }
+
+    before do
+      sign_in user
+      stub_recaptcha_verification_success
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      let(:new_project) { FactoryBot.build(:user_project, original: nil) }
+      let(:project_params) { new_project.attributes.merge(owner_id: user.slug) }
+      let(:recaptcha_params) { { "g-recaptcha-response-data" => { "project" => "test_token" } } }
+
+      it 'does not create the project' do
+        expect {
+          post :create, params: { project: project_params }.merge(recaptcha_params)
+        }.not_to change(Project, :count)
+      end
+
+      it 'redirects back with alert' do
+        post :create, params: { project: project_params }.merge(recaptcha_params)
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the project' do
+        original_description = project.description
+        patch :update, params: { owner_name: project.owner, id: project.id, project: { description: 'new description' } }
+        expect(project.reload.description).to eq(original_description)
+      end
+
+      it 'redirects back with alert for HTML request' do
+        request.env['HTTP_REFERER'] = edit_project_path(project.owner, project)
+        patch :update, params: { owner_name: project.owner, id: project.id, project: { description: 'new description' } }
+        expect(response).to redirect_to(edit_project_path(project.owner, project))
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+
+      it 'returns 503 for JSON request' do
+        patch :update, params: { owner_name: project.owner, id: project.id, project: { description: 'new description' } }, format: :json
+        expect(response).to have_http_status(:service_unavailable)
+        json = JSON.parse(response.body)
+        expect(json['success']).to eq(false)
+        expect(json['error']).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'POST fork' do
+      let!(:original_project) { FactoryBot.create(:user_project) }
+
+      it 'does not fork the project' do
+        expect {
+          post :fork, params: { owner_name: original_project.owner, project_id: original_project, owner_id: user.slug }
+        }.not_to change(Project, :count)
+      end
+
+      it 'redirects back with alert' do
+        post :fork, params: { owner_name: original_project.owner, project_id: original_project, owner_id: user.slug }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the project' do
+        expect {
+          delete :destroy, params: { owner_name: project.owner.slug, id: project.id }
+        }.not_to change { project.reload.is_deleted }
+      end
+
+      it 'redirects back with alert' do
+        delete :destroy, params: { owner_name: project.owner.slug, id: project.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'DELETE destroy_or_render_edit' do
+      it 'does not delete the project' do
+        expect {
+          delete :destroy_or_render_edit, params: { owner_name: project.owner.slug, project_id: project.id }
+        }.not_to change { project.reload.is_deleted }
+      end
+
+      it 'redirects back with alert' do
+        delete :destroy_or_render_edit, params: { owner_name: project.owner.slug, project_id: project.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH change_order' do
+      let!(:card1) { project.states.create!(description: 'foo', position: 1) }
+      let!(:card2) { project.states.create!(description: 'bar', position: 2) }
+
+      it 'does not change the order' do
+        patch :change_order, params: {
+          owner_name: project.owner,
+          project_id: project,
+          project: { states_attributes: [{ id: card1.id, position: 2 }, { id: card2.id, position: 1 }] }
+        }, xhr: true
+        expect(card1.reload.position).to eq(1)
+        expect(card2.reload.position).to eq(2)
+      end
+
+      it 'returns 503' do
+        patch :change_order, params: {
+          owner_name: project.owner,
+          project_id: project,
+          project: { states_attributes: [{ id: card1.id, position: 2 }, { id: card2.id, position: 1 }] }
+        }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    context 'when readonly mode is disabled' do
+      before do
+        allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(false)
+      end
+
+      describe 'POST create' do
+        let(:new_project) { FactoryBot.build(:user_project, original: nil) }
+        let(:project_params) { new_project.attributes.merge(owner_id: user.slug) }
+        let(:recaptcha_params) { { "g-recaptcha-response-data" => { "project" => "test_token" } } }
+
+        it 'creates the project' do
+          expect {
+            post :create, params: { project: project_params }.merge(recaptcha_params)
+          }.to change(Project, :count).by(1)
+        end
+      end
+
+      describe 'PATCH update' do
+        it 'updates the project' do
+          patch :update, params: { owner_name: project.owner, id: project.id, project: { description: 'new description' } }
+          expect(project.reload.description).to eq('new description')
+        end
+      end
+    end
   end
 end

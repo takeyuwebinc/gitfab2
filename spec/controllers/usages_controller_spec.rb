@@ -190,4 +190,56 @@ describe UsagesController, type: :controller do
       it { is_expected.to have_http_status(:unauthorized) }
     end
   end
+
+  describe 'readonly mode restriction' do
+    let!(:usage) { FactoryBot.create(:usage, project: project, title: 'foo', description: 'bar') }
+
+    before do
+      sign_in owner
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a usage' do
+        expect {
+          post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'title' } }, xhr: true
+        }.not_to change(Card::Usage, :count)
+      end
+
+      it 'returns 503' do
+        post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'title' } }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the usage' do
+        original_title = usage.title
+        patch :update,
+          params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'new_title' } },
+          xhr: true
+        expect(usage.reload.title).to eq(original_title)
+      end
+
+      it 'returns 503' do
+        patch :update,
+          params: { owner_name: owner, project_id: project, id: usage.id, usage: { title: 'new_title' } },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the usage' do
+        expect {
+          delete :destroy, params: { owner_name: owner.to_param, project_id: project, id: usage.id }, xhr: true
+        }.not_to change(Card::Usage, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { owner_name: owner.to_param, project_id: project, id: usage.id }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

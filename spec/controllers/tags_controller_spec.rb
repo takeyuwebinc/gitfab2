@@ -43,4 +43,42 @@ describe TagsController, type: :controller do
       expect(project.reload.draft).not_to include('tag-to-be-deleted')
     end
   end
+
+  describe 'readonly mode restriction' do
+    let!(:tag) { project.tags.create!(name: 'existing-tag', user: user) }
+
+    before do
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a tag' do
+        expect {
+          post :create,
+            params: { owner_name: project.owner, project_id: project, tag: { name: 'new_tag' } },
+            xhr: true
+        }.not_to change(Tag, :count)
+      end
+
+      it 'returns 503' do
+        post :create,
+          params: { owner_name: project.owner, project_id: project, tag: { name: 'new_tag' } },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the tag' do
+        expect {
+          delete :destroy, params: { id: tag.id }, xhr: true
+        }.not_to change(Tag, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { id: tag.id }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

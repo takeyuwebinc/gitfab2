@@ -1,11 +1,14 @@
 class ProjectsController < ApplicationController
   include SpamKeywordDetection
+  include SpammerRestriction
+  include ReadonlyModeRestriction
 
   layout 'project'
 
   before_action :load_owner, except: [:index, :new, :create, :fork, :change_order, :search]
   before_action :load_project, only: [:edit, :update, :destroy, :destroy_or_render_edit]
   before_action :delete_collaborations, only: [:destroy, :destroy_or_render_edit]
+  before_action :restrict_readonly_mode, only: %i[create update destroy destroy_or_render_edit fork change_order]
 
   authorize_resource
 
@@ -40,6 +43,11 @@ class ProjectsController < ApplicationController
     @project = @owner.projects.build(project_params)
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug
+
+    if spammer_silent_reject?("project_create")
+      redirect_to spammer_redirect_path
+      return
+    end
 
     recaptcha_result = RecaptchaVerificationService.new(request).verify(action: "project")
     if recaptcha_result.failure?
