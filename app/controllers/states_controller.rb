@@ -1,4 +1,6 @@
 class StatesController < ApplicationController
+  include SpamKeywordDetection
+
   before_action :load_owner
   before_action :load_project
   before_action :build_state, only: [:new, :create]
@@ -19,6 +21,11 @@ class StatesController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@state.title, @state.description], content_type: "State")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     if @state.save
       render :create
     else
@@ -27,7 +34,14 @@ class StatesController < ApplicationController
   end
 
   def update
-    if @state.update(state_params)
+    @state.assign_attributes(state_params)
+
+    if detect_spam_keyword(contents: [@state.title, @state.description], content_type: "State")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
+    if @state.save
       render :update
     else
       render json: { success: false }, status: 400
