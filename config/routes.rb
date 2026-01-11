@@ -38,6 +38,11 @@ Rails.application.routes.draw do
       resource :spam_batch, only: :create
     end
     resources :spammers, only: %i[index destroy]
+    resources :spam_keywords do
+      member do
+        patch :toggle_enabled
+      end
+    end
     resources :announcements
   end
 

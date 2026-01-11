@@ -17,6 +17,15 @@ const descriptionText = function() {
 
 const focusOnTitle = () => $(".card-title").first().focus();
 
+const showCardFormError = function(form, message) {
+  // 既存のエラーメッセージを削除
+  form.find(".card-form-error").remove();
+  // エラーメッセージを表示
+  const errorDiv = $('<div class="card-form-error alert alert-danger" style="margin-bottom: 15px;"></div>');
+  errorDiv.text(message);
+  form.prepend(errorDiv);
+};
+
 $(function() {
   $.rails.ajax = function(option) {
     option.xhr =  function() {
@@ -119,6 +128,8 @@ $(function() {
     });
 
     if (validated) {
+      // エラーメッセージをクリア
+      form.find(".card-form-error").remove();
       Rails.fire(form[0], "submit");
       $(this).find(".submit").off().fadeTo(80, 0.01);
       $(".modal").modal("hide");
@@ -152,7 +163,11 @@ $(function() {
       if (li.hasClass("state-wrapper")) { fixCommentFormAction(li); }
     }).bind("ajax:error", function(event) {
       li.remove();
-      alert(event.detail[1]);
+      const form = $(this);
+      const errorMessage = (event.detail[0] && event.detail[0].error) || event.detail[1] || "エラーが発生しました";
+      showCardFormError(form, errorMessage);
+      $("#modal-card-form").modal("show");
+      form.find(".submit").fadeTo(80, 1);
     });
   });
 
@@ -170,7 +185,16 @@ $(function() {
     }).bind("ajax:success", function(event) {
       updateCard(card, event.detail[0]);
       if (li.hasClass("state-wrapper")) { fixCommentFormAction(li); }
-    }).bind("ajax:error", event => alert(event.detail[1]));
+    }).bind("ajax:error", function(event) {
+      // 編集時はカードを削除せず、wait4saveのスタイルを元に戻す
+      card.removeClass("wait4save");
+      card.find("progress").remove();
+      const form = $(this);
+      const errorMessage = (event.detail[0] && event.detail[0].error) || event.detail[1] || "エラーが発生しました";
+      showCardFormError(form, errorMessage);
+      $("#modal-card-form").modal("show");
+      form.find(".submit").fadeTo(80, 1);
+    });
   });
 
   $(document).on("ajax:success", ".new-card, .edit-card", function() {
@@ -280,8 +304,9 @@ $(function() {
         });
       },
 
-      error(data) {
-        alert(data.message);
+      error(xhr) {
+        const message = (xhr.responseJSON && xhr.responseJSON.error) || (xhr.responseJSON && xhr.responseJSON.message) || "An error occurred while converting to annotation.";
+        alert(message);
       }
     });
   });
@@ -328,8 +353,9 @@ $(function() {
           }
         });
       },
-      error(data) {
-        alert(data.message);
+      error(xhr) {
+        const message = (xhr.responseJSON && xhr.responseJSON.error) || (xhr.responseJSON && xhr.responseJSON.message) || "An error occurred while converting to state.";
+        alert(message);
       }
     });
   });

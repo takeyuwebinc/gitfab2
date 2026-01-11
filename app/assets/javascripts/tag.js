@@ -17,7 +17,17 @@ $(function() {
   });
 
   $(document).on("ajax:error", "#tag-form, .delete-tag", function(event) {
-    alert(event.detail[0].message);
+    let response = event.detail[0];
+    // レスポンスが文字列の場合はJSONとしてパースを試みる
+    if (typeof response === "string") {
+      try {
+        response = JSON.parse(response);
+      } catch (e) {
+        // パースに失敗した場合はそのまま使用
+      }
+    }
+    const message = (response && (response.message || response.error)) || "An error occurred";
+    alert(message);
     event.preventDefault();
   });
 

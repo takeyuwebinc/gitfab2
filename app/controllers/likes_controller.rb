@@ -1,4 +1,8 @@
 class LikesController < ApplicationController
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[create destroy]
+
   def show
     project = Project.find_with(params[:owner_name], params[:project_id])
     liked = project.likes.where(user: current_user).exists?

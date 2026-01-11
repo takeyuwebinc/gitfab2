@@ -1,10 +1,14 @@
 class AnnotationsController < ApplicationController
+  include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
   before_action :load_owner
   before_action :load_project
   before_action :load_state
   before_action :load_annotation, only: [:edit, :show, :update, :destroy]
   before_action :build_annotation, only: [:new, :create]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy to_state]
   after_action :update_project, only: [:create, :update, :destroy]
 
   authorize_resource class: Card::Annotation.name
@@ -20,6 +24,11 @@ class AnnotationsController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@annotation.title, @annotation.description], content_type: "Annotation")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     if @annotation.save
       render :create
     else
@@ -28,8 +37,14 @@ class AnnotationsController < ApplicationController
   end
 
   def update
-    auto_linked_params = annotation_params
-    if @annotation.update auto_linked_params
+    @annotation.assign_attributes(annotation_params)
+
+    if detect_spam_keyword(contents: [@annotation.title, @annotation.description], content_type: "Annotation")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
+    if @annotation.save
       render :update
     else
       render json: { success: false }, status: 400

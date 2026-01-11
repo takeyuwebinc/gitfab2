@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class PasswordsController < ApplicationController
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[create update]
+
   def new
   end
 

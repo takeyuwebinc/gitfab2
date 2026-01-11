@@ -62,6 +62,40 @@ describe AnnotationsController, type: :controller do
         it { expect { subject }.to_not change(Card::Annotation, :count) }
       end
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let!(:state) { project.states.create type: Card::State.name, description: 'foo' }
+
+      before do
+        sign_in(FactoryBot.create(:user))
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'Visit casino now', description: 'ann' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'foo', description: 'Visit casino now' } },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Annotationが作成されないこと' do
+        expect {
+          post :create,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation: { title: 'Visit casino now', description: 'ann' } },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+    end
   end
 
   describe 'PATCH #update' do
@@ -134,6 +168,52 @@ describe AnnotationsController, type: :controller do
             xhr: true
         end
         it { is_expected.to render_template :update }
+      end
+    end
+
+    context 'スパムキーワードを含む場合' do
+      let(:current_user) { user }
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let!(:state) { FactoryBot.create(:state, project: project) }
+      let!(:annotation) { FactoryBot.create(:annotation, state: state) }
+
+      before do
+        sign_in(current_user)
+        SpamKeywordDetector.clear_cache
+      end
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'タイトルにスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'Visit casino now', description: 'new_desc' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body, symbolize_names: true)[:error]).to include('prohibited keyword')
+      end
+
+      it '説明にスパムキーワードを含む場合は拒否されること' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'new_title', description: 'Visit casino now' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'Annotationが更新されないこと' do
+        original_description = annotation.description
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { title: 'Visit casino now', description: 'new_desc' }
+          },
+          xhr: true
+        annotation.reload
+        expect(annotation.description).to eq(original_description)
       end
     end
 
@@ -259,6 +339,92 @@ describe AnnotationsController, type: :controller do
     describe 'save_current_users_contribution' do
     end
     describe 'create_new_contribution' do
+    end
+  end
+
+  describe 'readonly mode restriction' do
+    let(:state) { FactoryBot.create(:state, project: project, annotations_count: 0) }
+    let(:annotation) { FactoryBot.create(:annotation, state: state) }
+
+    before do
+      sign_in user
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create an annotation' do
+        expect {
+          post :create,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation: { description: 'ann' } },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+
+      it 'returns 503' do
+        post :create,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation: { description: 'ann' } },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the annotation' do
+        original_description = annotation.description
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { description: 'new_ann' }
+          },
+          xhr: true
+        expect(annotation.reload.description).to eq(original_description)
+      end
+
+      it 'returns 503' do
+        patch :update,
+          params: {
+            owner_name: user, project_id: project, state_id: state.id,
+            id: annotation.id, annotation: { description: 'new_ann' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the annotation' do
+        annotation # create it first
+        expect {
+          delete :destroy,
+            params: { owner_name: user, project_id: project, state_id: state.id, id: annotation.id },
+            xhr: true
+        }.not_to change(Card::Annotation, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy,
+          params: { owner_name: user, project_id: project, state_id: state.id, id: annotation.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'POST to_state' do
+      it 'does not convert annotation to state' do
+        annotation # create it first, before counting
+        expect {
+          post :to_state,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+            xhr: true
+        }.not_to change(Card::State, :count)
+      end
+
+      it 'returns 503' do
+        post :to_state,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
     end
   end
 end

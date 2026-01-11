@@ -174,4 +174,57 @@ describe GroupsController, type: :controller do
       it { expect { subject }.not_to change { group.projects.count } }
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:group) { FactoryBot.create(:group) }
+
+    before do
+      sign_in user
+      user.memberships.create(group: group, role: 'admin')
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      let(:group_params) { FactoryBot.build(:group).attributes }
+
+      it 'does not create a group' do
+        expect {
+          post :create, params: { group: group_params }
+        }.not_to change(Group, :count)
+      end
+
+      it 'redirects back with alert' do
+        post :create, params: { group: group_params }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the group' do
+        patch :update, params: { id: group, group: { name: 'updated' } }
+        expect(group.reload.name).not_to eq('updated')
+      end
+
+      it 'redirects back with alert' do
+        patch :update, params: { id: group, group: { name: 'updated' } }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the group' do
+        expect {
+          delete :destroy, params: { id: group }
+        }.not_to change { group.reload.is_deleted }
+      end
+
+      it 'redirects back with alert' do
+        delete :destroy, params: { id: group }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+  end
 end

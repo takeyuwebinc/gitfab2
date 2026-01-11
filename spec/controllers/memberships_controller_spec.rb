@@ -136,12 +136,50 @@ describe MembershipsController, type: :controller do
       context 'when 2 group members (admins)' do
         # Another user's membership
         before { FactoryBot.create(:membership, group: group, role: 'admin') }
-  
+
         subject { delete :destroy, params: { user_id: user.to_param, id: membership.id } }
 
         it 'does NOT delete the membership' do
           expect { subject }.to_not change(Membership, :count)
         end
+      end
+    end
+  end
+
+  describe 'readonly mode restriction' do
+    let(:group) { FactoryBot.create(:group) }
+    let(:current_user) { FactoryBot.create(:user) }
+    let!(:current_membership) { FactoryBot.create(:membership, group: group, user: current_user, role: 'admin') }
+    let(:target_user) { FactoryBot.create(:user) }
+    let!(:target_membership) { FactoryBot.create(:membership, group: group, user: target_user, role: 'editor') }
+
+    before do
+      sign_in(current_user)
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the membership' do
+        patch :update, params: { user_id: target_user.to_param, id: target_membership.id, membership: { role: 'admin' } }, xhr: true
+        expect(target_membership.reload.role).to eq('editor')
+      end
+
+      it 'returns 503' do
+        patch :update, params: { user_id: target_user.to_param, id: target_membership.id, membership: { role: 'admin' } }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the membership' do
+        expect {
+          delete :destroy, params: { user_id: target_user.to_param, id: target_membership.id }, xhr: true
+        }.not_to change(Membership, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { user_id: target_user.to_param, id: target_membership.id }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
       end
     end
   end

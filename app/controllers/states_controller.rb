@@ -1,9 +1,13 @@
 class StatesController < ApplicationController
+  include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
   before_action :load_owner
   before_action :load_project
   before_action :build_state, only: [:new, :create]
   before_action :load_state, only: [:edit, :show, :update, :destroy]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy to_annotation]
   after_action :update_project, only: [:create, :update, :destroy]
 
   authorize_resource class: Card::State.name
@@ -19,6 +23,11 @@ class StatesController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@state.title, @state.description], content_type: "State")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     if @state.save
       render :create
     else
@@ -27,7 +36,14 @@ class StatesController < ApplicationController
   end
 
   def update
-    if @state.update(state_params)
+    @state.assign_attributes(state_params)
+
+    if detect_spam_keyword(contents: [@state.title, @state.description], content_type: "State")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
+    if @state.save
       render :update
     else
       render json: { success: false }, status: 400

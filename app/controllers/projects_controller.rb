@@ -1,9 +1,14 @@
 class ProjectsController < ApplicationController
+  include SpamKeywordDetection
+  include SpammerRestriction
+  include ReadonlyModeRestriction
+
   layout 'project'
 
   before_action :load_owner, except: [:index, :new, :create, :fork, :change_order, :search]
   before_action :load_project, only: [:edit, :update, :destroy, :destroy_or_render_edit]
   before_action :delete_collaborations, only: [:destroy, :destroy_or_render_edit]
+  before_action :restrict_readonly_mode, only: %i[create update destroy destroy_or_render_edit fork change_order]
 
   authorize_resource
 
@@ -39,9 +44,20 @@ class ProjectsController < ApplicationController
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug
 
+    if spammer_silent_reject?("project_create")
+      redirect_to spammer_redirect_path
+      return
+    end
+
     recaptcha_result = RecaptchaVerificationService.new(request).verify(action: "project")
     if recaptcha_result.failure?
       flash.now[:alert] = recaptcha_result.error_message
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    if detect_spam_keyword(contents: [ @project.name, @project.title, @project.description ], content_type: "Project")
+      flash.now[:alert] = spam_keyword_rejection_message
       render :new, status: :unprocessable_entity
       return
     end
@@ -62,7 +78,26 @@ class ProjectsController < ApplicationController
       parameters[:name] = parameters[:name].downcase
     end
 
-    if @project.update parameters
+    @project.assign_attributes(parameters)
+
+    contents_to_check = [
+      @project.name,
+      @project.title,
+      @project.description
+    ].compact
+
+    if contents_to_check.present? && detect_spam_keyword(contents: contents_to_check, content_type: "Project")
+      respond_to do |format|
+        format.json { render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity }
+        format.html do
+          flash.now[:alert] = spam_keyword_rejection_message
+          render :edit, status: :unprocessable_entity
+        end
+      end
+      return
+    end
+
+    if @project.save
       notify_users_on_update(@project, @owner)
       respond_to do |format|
         format.json { render json: { success: true } }

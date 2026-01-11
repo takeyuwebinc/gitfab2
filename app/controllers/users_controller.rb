@@ -1,6 +1,9 @@
 class UsersController < ApplicationController
+  include ReadonlyModeRestriction
+
   layout 'user'
   before_action :authenticate_user!, only: %i[edit update destroy backup download_backup]
+  before_action :restrict_readonly_mode, only: %i[create update destroy update_password]
 
   def index
     @users = User.active.order(:name) # TODO: ユーザー名による絞り込み

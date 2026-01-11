@@ -98,4 +98,47 @@ RSpec.describe PasswordsController, type: :controller do
       end
     end
   end
+
+  describe 'readonly mode restriction' do
+    before do
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      let(:user) { FactoryBot.create(:user_password_auth) }
+
+      it 'does not send reset password instructions' do
+        expect_any_instance_of(User::PasswordAuth).not_to receive(:send_reset_password_instructions)
+        post :create, params: { email: user.email }
+      end
+
+      it 'redirects back with alert' do
+        post :create, params: { email: user.email }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH update' do
+      let(:reset_password_token) { SecureRandom.urlsafe_base64 }
+      let!(:user) do
+        FactoryBot.create(:user_password_auth,
+          reset_password_token: reset_password_token,
+          reset_password_sent_at: Time.current
+        )
+      end
+
+      it 'does not update the password' do
+        original_digest = user.password_digest
+        patch :update, params: { user: { reset_password_token: reset_password_token, password: 'newpass', password_confirmation: 'newpass' } }
+        expect(user.reload.password_digest).to eq(original_digest)
+      end
+
+      it 'redirects back with alert' do
+        patch :update, params: { user: { reset_password_token: reset_password_token, password: 'newpass', password_confirmation: 'newpass' } }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+  end
 end

@@ -1,4 +1,7 @@
 class NoteCardsController < ApplicationController
+  include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
   layout 'project'
 
   before_action :load_owner
@@ -6,6 +9,7 @@ class NoteCardsController < ApplicationController
   before_action :load_note_card, only: [:show, :edit, :update, :destroy]
   before_action :build_note_card, only: [:new, :create]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy]
   after_action :notify, only: [:create, :update]
 
   def index
@@ -19,6 +23,11 @@ class NoteCardsController < ApplicationController
   end
 
   def create
+    if detect_spam_keyword(contents: [@note_card.title, @note_card.description], content_type: "NoteCard")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     @note_card.description = view_context.auto_link @note_card.description, html: { target: '_blank' }
     if can?(:create, @note_card) && @note_card.save
       @project.touch
@@ -32,15 +41,20 @@ class NoteCardsController < ApplicationController
   end
 
   def update
-    auto_linked_params = note_card_params
+    @note_card.assign_attributes(note_card_params)
+
+    if detect_spam_keyword(contents: [@note_card.title, @note_card.description], content_type: "NoteCard")
+      render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
+      return
+    end
+
     # titleのみを変更しようとした場合、descriptionは空になる
     # {"title"=>"_foo", "description"=>""}
     # validationをかけているので、ここで有無を判別する
     if note_card_params[:description].present?
-      description = view_context.auto_link(note_card_params[:description], html: { target: '_blank' })
-      auto_linked_params[:description] = description
+      @note_card.description = view_context.auto_link(note_card_params[:description], html: { target: '_blank' })
     end
-    if can?(:update, @note_card) && @note_card.update(auto_linked_params)
+    if can?(:update, @note_card) && @note_card.save
       @project.touch
       render :update
     else

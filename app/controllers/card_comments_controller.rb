@@ -1,7 +1,17 @@
 class CardCommentsController < ApplicationController
+  include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[create destroy]
+
   def create
     card = Card.find(params[:card_id])
     comment = CardComment.build_from(card, current_user, { body: params[:body] })
+
+    if detect_spam_keyword(contents: comment.body, content_type: "CardComment")
+      render json: { success: false, message: { "": spam_keyword_rejection_message } }, status: :unprocessable_entity
+      return
+    end
 
     if comment.save
       notify_users(comment)

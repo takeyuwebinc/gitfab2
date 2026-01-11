@@ -1,4 +1,8 @@
 class MembershipsController < ApplicationController
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[update destroy]
+
   def index
     @user = User.friendly.find params[:user_id]
     render layout: 'user'

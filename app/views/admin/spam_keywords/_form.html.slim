@@ -1,0 +1,16 @@
+= form_with model: [:admin, spam_keyword], local: true do |f|
+  - if spam_keyword.errors.any?
+    .alert.alert-danger
+      ul.mb-0
+        - spam_keyword.errors.full_messages.each do |message|
+          li = message
+
+  .mb-3
+    = f.label :keyword, "キーワード", class: "form-label"
+    = f.text_field :keyword, class: "form-control", required: true, maxlength: 255
+
+  .mb-3.form-check
+    = f.check_box :enabled, class: "form-check-input"
+    = f.label :enabled, "有効", class: "form-check-label"
+
+  = f.submit spam_keyword.new_record? ? "追加" : "更新", class: "btn btn-primary"

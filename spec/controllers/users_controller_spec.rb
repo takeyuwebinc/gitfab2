@@ -266,4 +266,84 @@ describe UsersController, type: :controller do
       File.delete(backup.zip_path)
     end
   end
+
+  describe 'readonly mode restriction' do
+    before do
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      let(:user_params) do
+        {
+          password: 'password', password_confirmation: 'password',
+          name: 'newuser', url: 'https://sample.com', location: 'Tokyo',
+          email: 'new-user@example.com', email_confirmation: 'new-user@example.com',
+          encrypted_identity_id: nil
+        }
+      end
+
+      it 'does not create a user' do
+        expect {
+          post :create, params: { user: user_params }
+        }.not_to change(User, :count)
+      end
+
+      it 'redirects back with alert' do
+        post :create, params: { user: user_params }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH update' do
+      let(:user) { FactoryBot.create(:user, name: 'before') }
+
+      before { sign_in user }
+
+      it 'does not update the user' do
+        patch :update, params: { user: { name: 'after' } }
+        expect(user.reload.name).to eq('before')
+      end
+
+      it 'redirects back with alert' do
+        patch :update, params: { user: { name: 'after' } }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      let(:user) { FactoryBot.create(:user) }
+
+      before { sign_in user }
+
+      it 'does not delete the user' do
+        expect {
+          delete :destroy, params: { id: user }
+        }.not_to change { user.reload.is_deleted }
+      end
+
+      it 'redirects back with alert' do
+        delete :destroy, params: { id: user }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'PATCH update_password' do
+      let(:user) { FactoryBot.create(:user, password_digest: nil) }
+
+      it 'does not update the password' do
+        original_digest = user.password_digest
+        patch :update_password, params: { user_id: user.name, password: 'newpass', password_confirmation: 'newpass' }
+        expect(user.reload.password_digest).to eq(original_digest)
+      end
+
+      it 'redirects back with alert' do
+        patch :update_password, params: { user_id: user.name, password: 'newpass', password_confirmation: 'newpass' }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+  end
 end
