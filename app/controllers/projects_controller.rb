@@ -70,10 +70,12 @@ class ProjectsController < ApplicationController
       parameters[:name] = parameters[:name].downcase
     end
 
+    @project.assign_attributes(parameters)
+
     contents_to_check = [
-      parameters&.dig(:name),
-      parameters&.dig(:title),
-      parameters&.dig(:description)
+      @project.name,
+      @project.title,
+      @project.description
     ].compact
 
     if contents_to_check.present? && detect_spam_keyword(contents: contents_to_check, content_type: "Project")
@@ -87,7 +89,7 @@ class ProjectsController < ApplicationController
       return
     end
 
-    if @project.update parameters
+    if @project.save
       notify_users_on_update(@project, @owner)
       respond_to do |format|
         format.json { render json: { success: true } }
