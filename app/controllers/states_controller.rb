@@ -7,7 +7,7 @@ class StatesController < ApplicationController
   before_action :build_state, only: [:new, :create]
   before_action :load_state, only: [:edit, :show, :update, :destroy]
   before_action :update_contribution, only: [:create, :update]
-  before_action :restrict_readonly_mode, only: %i[create update destroy]
+  before_action :restrict_readonly_mode, only: %i[create update destroy to_annotation]
   after_action :update_project, only: [:create, :update, :destroy]
 
   authorize_resource class: Card::State.name

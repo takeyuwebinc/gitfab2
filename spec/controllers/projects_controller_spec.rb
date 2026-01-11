@@ -931,6 +931,30 @@ describe ProjectsController, type: :controller do
       end
     end
 
+    describe 'PATCH change_order' do
+      let!(:card1) { project.states.create!(description: 'foo', position: 1) }
+      let!(:card2) { project.states.create!(description: 'bar', position: 2) }
+
+      it 'does not change the order' do
+        patch :change_order, params: {
+          owner_name: project.owner,
+          project_id: project,
+          project: { states_attributes: [{ id: card1.id, position: 2 }, { id: card2.id, position: 1 }] }
+        }, xhr: true
+        expect(card1.reload.position).to eq(1)
+        expect(card2.reload.position).to eq(2)
+      end
+
+      it 'returns 503' do
+        patch :change_order, params: {
+          owner_name: project.owner,
+          project_id: project,
+          project: { states_attributes: [{ id: card1.id, position: 2 }, { id: card2.id, position: 1 }] }
+        }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
     context 'when readonly mode is disabled' do
       before do
         allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(false)

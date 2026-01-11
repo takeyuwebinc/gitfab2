@@ -498,5 +498,24 @@ describe StatesController, type: :controller do
         expect(response).to have_http_status(:service_unavailable)
       end
     end
+
+    describe 'POST to_annotation' do
+      let!(:state2) { FactoryBot.create(:state, project: project) }
+
+      it 'does not convert state to annotation' do
+        expect {
+          post :to_annotation,
+            params: { owner_name: project.owner, project_id: project.name, state_id: state2.id, dst_state_id: state.id },
+            xhr: true
+        }.not_to change(state.annotations, :count)
+      end
+
+      it 'returns 503' do
+        post :to_annotation,
+          params: { owner_name: project.owner, project_id: project.name, state_id: state2.id, dst_state_id: state.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
   end
 end

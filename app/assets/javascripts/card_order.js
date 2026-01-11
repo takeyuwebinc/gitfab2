@@ -95,4 +95,12 @@ $(function() {
     $("#card-order-tools").removeClass("order-changing");
     $("#recipe-card-list").trigger("card-order-changed");
   });
+
+  $(document).on("ajax:error", ".order-change-form", function(event) {
+    const response = event.detail[0];
+    const message = (response && response.error) || (response && response.message) || "An error occurred while changing card order.";
+    alert(message);
+    $("#recipe-card-list").removeClass("order-changing");
+    $("#card-order-tools").removeClass("order-changing");
+  });
 });

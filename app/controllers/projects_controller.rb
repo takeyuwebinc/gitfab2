@@ -8,7 +8,7 @@ class ProjectsController < ApplicationController
   before_action :load_owner, except: [:index, :new, :create, :fork, :change_order, :search]
   before_action :load_project, only: [:edit, :update, :destroy, :destroy_or_render_edit]
   before_action :delete_collaborations, only: [:destroy, :destroy_or_render_edit]
-  before_action :restrict_readonly_mode, only: %i[create update destroy destroy_or_render_edit fork]
+  before_action :restrict_readonly_mode, only: %i[create update destroy destroy_or_render_edit fork change_order]
 
   authorize_resource
 

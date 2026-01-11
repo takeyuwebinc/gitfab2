@@ -408,5 +408,23 @@ describe AnnotationsController, type: :controller do
         expect(response).to have_http_status(:service_unavailable)
       end
     end
+
+    describe 'POST to_state' do
+      it 'does not convert annotation to state' do
+        annotation # create it first, before counting
+        expect {
+          post :to_state,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+            xhr: true
+        }.not_to change(Card::State, :count)
+      end
+
+      it 'returns 503' do
+        post :to_state,
+          params: { owner_name: user, project_id: project, state_id: state.id, annotation_id: annotation.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
   end
 end
