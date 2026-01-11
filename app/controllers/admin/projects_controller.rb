@@ -10,8 +10,13 @@ class Admin::ProjectsController < Admin::ApplicationController
   def show; end
 
   def destroy
-    @project.soft_destroy!
-    redirect_to admin_projects_path
+    result = SpamDesignationService.call([@project])
+
+    if result.failed.empty?
+      redirect_to admin_projects_path, notice: 'プロジェクトをスパム認定しました'
+    else
+      redirect_to admin_projects_path, alert: 'スパム認定に失敗しました'
+    end
   end
 
   def batch_spam
