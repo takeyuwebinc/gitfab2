@@ -13,6 +13,31 @@
           .card-header.bg-light
             h5.mb-0
               i.bi.bi-shield-check.me-2
+              | リードオンリーモード
+          .card-body.p-4
+            .mb-4
+              .form-check.form-switch
+                = check_box_tag :readonly_mode_enabled, "1", @readonly_mode_enabled, class: "form-check-input", id: "readonly_mode_enabled"
+                = label_tag :readonly_mode_enabled, "リードオンリーモードを有効にする", class: "form-check-label fw-bold"
+              .form-text.text-muted.mt-2
+                | 有効にすると、サイト全体で投稿・編集操作が制限されます。
+              .form-text.text-muted
+                | システム管理者を含む全てのユーザーが制限対象となります。
+
+            .mb-4
+              = label_tag :readonly_mode_expires_at, "自動解除日時（任意）", class: "form-label fw-bold"
+              .row
+                .col-md-6
+                  = datetime_local_field_tag :readonly_mode_expires_at, @readonly_mode_expires_at&.strftime("%Y-%m-%dT%H:%M"), class: "form-control"
+              .form-text.text-muted.mt-2
+                | 指定した日時に自動でリードオンリーモードを解除します。
+              .form-text.text-muted
+                | 空欄の場合は手動で解除するまで有効のままとなります。
+
+        .card.mb-4
+          .card-header.bg-light
+            h5.mb-0
+              i.bi.bi-shield-check.me-2
               | reCAPTCHA設定
           .card-body.p-4
             .mb-4

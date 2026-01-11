@@ -1,5 +1,6 @@
 class NoteCardsController < ApplicationController
   include SpamKeywordDetection
+  include ReadonlyModeRestriction
 
   layout 'project'
 
@@ -8,6 +9,7 @@ class NoteCardsController < ApplicationController
   before_action :load_note_card, only: [:show, :edit, :update, :destroy]
   before_action :build_note_card, only: [:new, :create]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy]
   after_action :notify, only: [:create, :update]
 
   def index

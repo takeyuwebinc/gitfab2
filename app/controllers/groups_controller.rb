@@ -1,5 +1,8 @@
 class GroupsController < ApplicationController
+  include ReadonlyModeRestriction
+
   layout 'groups'
+  before_action :restrict_readonly_mode, only: %i[create update destroy]
 
   def index
     @groups = current_user.groups.active

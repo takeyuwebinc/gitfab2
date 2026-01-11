@@ -1,5 +1,6 @@
 class AnnotationsController < ApplicationController
   include SpamKeywordDetection
+  include ReadonlyModeRestriction
 
   before_action :load_owner
   before_action :load_project
@@ -7,6 +8,7 @@ class AnnotationsController < ApplicationController
   before_action :load_annotation, only: [:edit, :show, :update, :destroy]
   before_action :build_annotation, only: [:new, :create]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy to_state]
   after_action :update_project, only: [:create, :update, :destroy]
 
   authorize_resource class: Card::Annotation.name

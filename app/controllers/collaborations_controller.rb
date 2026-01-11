@@ -1,4 +1,8 @@
 class CollaborationsController < ApplicationController
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode
+
   def create
     project = Project.find_with(params[:owner_name], params[:project_id])
     unless can?(:manage, project)

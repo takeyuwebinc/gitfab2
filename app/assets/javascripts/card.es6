@@ -304,8 +304,9 @@ $(function() {
         });
       },
 
-      error(data) {
-        alert(data.message);
+      error(xhr) {
+        const message = (xhr.responseJSON && xhr.responseJSON.error) || (xhr.responseJSON && xhr.responseJSON.message) || "An error occurred while converting to annotation.";
+        alert(message);
       }
     });
   });
@@ -352,8 +353,9 @@ $(function() {
           }
         });
       },
-      error(data) {
-        alert(data.message);
+      error(xhr) {
+        const message = (xhr.responseJSON && xhr.responseJSON.error) || (xhr.responseJSON && xhr.responseJSON.message) || "An error occurred while converting to state.";
+        alert(message);
       }
     });
   });

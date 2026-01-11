@@ -185,4 +185,57 @@ describe ProjectCommentsController, type: :controller do
       )
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:project) { FactoryBot.create(:project) }
+    let(:user) { FactoryBot.create(:user) }
+    let!(:project_comment) { FactoryBot.create(:project_comment, user: user, project: project, body: 'valid') }
+
+    before do
+      sign_in user
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      let(:params) do
+        {
+          owner_name: project.owner.slug,
+          project_id: project.id,
+          project_comment: { body: 'new comment' }
+        }
+      end
+
+      it 'does not create a comment' do
+        expect { post :create, params: params }.not_to change(ProjectComment, :count)
+      end
+
+      it 'redirects back with alert' do
+        post :create, params: params
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      let(:params) do
+        {
+          owner_name: project.owner.slug,
+          project_id: project.id,
+          id: project_comment.id
+        }
+      end
+
+      before { sign_in project.owner }
+
+      it 'does not delete the comment' do
+        expect { delete :destroy, params: params }.not_to change(ProjectComment, :count)
+      end
+
+      it 'redirects back with alert' do
+        delete :destroy, params: params
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq(ReadonlyModeRestriction::READONLY_MODE_ERROR_MESSAGE)
+      end
+    end
+  end
 end

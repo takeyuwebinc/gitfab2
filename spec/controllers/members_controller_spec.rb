@@ -57,4 +57,29 @@ describe MembersController, type: :controller do
       it { expect { subject }.to_not change(user.memberships, :count) }
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:group) { FactoryBot.create :group }
+    let(:user) { FactoryBot.create :user }
+    let(:admin_user) { FactoryBot.create :user }
+
+    before do
+      sign_in admin_user
+      FactoryBot.create(:membership, group: group, user: admin_user, role: "admin")
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not add a member' do
+        expect {
+          post :create, params: { group_id: group.id, member_name: user.to_param }, xhr: true
+        }.not_to change(Membership, :count)
+      end
+
+      it 'returns 503' do
+        post :create, params: { group_id: group.id, member_name: user.to_param }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

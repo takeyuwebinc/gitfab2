@@ -1,4 +1,8 @@
 class MembersController < ApplicationController
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode
+
   def create
     @group = Group.find(params[:group_id])
     unless can?(:manage, @group)

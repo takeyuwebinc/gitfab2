@@ -246,4 +246,55 @@ describe NoteCardsController, type: :controller do
       end
     end
   end
+
+  describe 'readonly mode restriction' do
+    before do
+      sign_in user
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a note card' do
+        expect {
+          post :create, params: { owner_name: user, project_id: project, note_card: new_note_card.attributes }, xhr: true
+        }.not_to change(Card::NoteCard, :count)
+      end
+
+      it 'returns 503' do
+        post :create, params: { owner_name: user, project_id: project, note_card: new_note_card.attributes }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the note card' do
+        original_title = note_card.title
+        patch :update,
+          params: { owner_name: user, project_id: project, id: note_card.id, note_card: { title: 'new_title' } },
+          xhr: true
+        expect(note_card.reload.title).to eq(original_title)
+      end
+
+      it 'returns 503' do
+        patch :update,
+          params: { owner_name: user, project_id: project, id: note_card.id, note_card: { title: 'new_title' } },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the note card' do
+        note_card # create it first
+        expect {
+          delete :destroy, params: { owner_name: user, project_id: project, id: note_card.id }, xhr: true
+        }.not_to change(Card::NoteCard, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { owner_name: user, project_id: project, id: note_card.id }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

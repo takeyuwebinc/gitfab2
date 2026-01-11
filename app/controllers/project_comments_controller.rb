@@ -1,5 +1,8 @@
 class ProjectCommentsController < ApplicationController
   include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[create destroy]
 
   def create
     project = Project.find(params[:project_id])

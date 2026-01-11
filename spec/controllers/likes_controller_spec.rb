@@ -80,4 +80,42 @@ RSpec.describe LikesController, type: :controller do
     end
   end
 
+  describe 'readonly mode restriction' do
+    let(:project) { FactoryBot.create(:project) }
+    let(:user) { FactoryBot.create(:user) }
+
+    before do
+      sign_in(user)
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a like' do
+        expect {
+          post :create, params: { owner_name: project.owner, project_id: project }, xhr: true
+        }.not_to change(Like, :count)
+      end
+
+      it 'returns 503' do
+        post :create, params: { owner_name: project.owner, project_id: project }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      before { Like.create!(project: project, user: user) }
+
+      it 'does not delete the like' do
+        expect {
+          delete :destroy, params: { owner_name: project.owner, project_id: project }, xhr: true
+        }.not_to change(Like, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { owner_name: project.owner, project_id: project }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
+
 end
