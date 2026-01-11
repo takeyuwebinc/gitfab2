@@ -44,6 +44,24 @@ describe CardCommentsController, type: :controller do
       end
       it { expect{ subject }.not_to change{ CardComment.count } }
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { FactoryBot.create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let(:body) { 'Visit casino now' }
+
+      before { SpamKeywordDetector.clear_cache }
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'エラーが返されること' do
+        is_expected.to have_http_status(:unprocessable_entity)
+        response_body = JSON.parse(response.body)
+        expect(response_body["message"][""]).to include('禁止されているキーワード')
+      end
+
+      it 'コメントが作成されないこと' do
+        expect { subject }.not_to change(CardComment, :count)
+      end
+    end
   end
 
   describe 'DELETE #destroy' do

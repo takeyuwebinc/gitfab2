@@ -6,7 +6,7 @@ class CardCommentsController < ApplicationController
     comment = CardComment.build_from(card, current_user, { body: params[:body] })
 
     if detect_spam_keyword(contents: comment.body, content_type: "CardComment")
-      render json: { success: false, message: { base: [ spam_keyword_rejection_message ] } }, status: :unprocessable_entity
+      render json: { success: false, message: { "": spam_keyword_rejection_message } }, status: :unprocessable_entity
       return
     end
 

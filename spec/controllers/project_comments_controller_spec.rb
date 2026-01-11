@@ -79,6 +79,38 @@ describe ProjectCommentsController, type: :controller do
         expect(flash[:alert]).to include 'Body is too long (maximum is 300 characters)'
       end
     end
+
+    context 'スパムキーワードを含む場合' do
+      let!(:spam_keyword) { FactoryBot.create(:spam_keyword, keyword: 'casino', enabled: true) }
+      let(:params) do
+        {
+          owner_name: project.owner.slug,
+          project_id: project.id,
+          project_comment: { body: 'Visit casino now' }
+        }
+      end
+
+      before { SpamKeywordDetector.clear_cache }
+      after { SpamKeywordDetector.clear_cache }
+
+      it 'リダイレクトされること' do
+        is_expected.to redirect_to project_path(project.owner.slug, project, anchor: "project-comment-form")
+      end
+
+      it 'コメントが作成されないこと' do
+        expect { subject }.not_to change(ProjectComment, :count)
+      end
+
+      it 'エラーメッセージが表示されること' do
+        subject
+        expect(flash[:alert]).to include('禁止されているキーワード')
+      end
+
+      it '入力内容が保持されること' do
+        subject
+        expect(flash[:project_comment_body]).to eq('Visit casino now')
+      end
+    end
   end
 
   describe 'DELETE #destroy' do
