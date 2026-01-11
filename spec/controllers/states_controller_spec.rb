@@ -425,4 +425,78 @@ describe StatesController, type: :controller do
       end
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:project) { FactoryBot.create(:user_project) }
+    let(:state) { FactoryBot.create(:state, project: project) }
+
+    before do
+      sign_in project.owner
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a state' do
+        expect {
+          post :create,
+            params: {
+              owner_name: project.owner, project_id: project,
+              state: { type: Card::State.name, title: 'foo', description: 'bar' }
+            },
+            xhr: true
+        }.not_to change(project.states, :count)
+      end
+
+      it 'returns 503' do
+        post :create,
+          params: {
+            owner_name: project.owner, project_id: project,
+            state: { type: Card::State.name, title: 'foo', description: 'bar' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'PATCH update' do
+      it 'does not update the state' do
+        original_title = state.title
+        patch :update,
+          params: {
+            owner_name: project.owner, project_id: project.id, id: state.id,
+            state: { title: 'new_title', description: 'new_desc' }
+          },
+          xhr: true
+        expect(state.reload.title).to eq(original_title)
+      end
+
+      it 'returns 503' do
+        patch :update,
+          params: {
+            owner_name: project.owner, project_id: project.id, id: state.id,
+            state: { title: 'new_title', description: 'new_desc' }
+          },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      it 'does not delete the state' do
+        state # create it first
+        expect {
+          delete :destroy,
+            params: { owner_name: project.owner, project_id: project.name, id: state.id },
+            xhr: true
+        }.not_to change(Card::State, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy,
+          params: { owner_name: project.owner, project_id: project.name, id: state.id },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

@@ -1,5 +1,8 @@
 class CardCommentsController < ApplicationController
   include SpamKeywordDetection
+  include ReadonlyModeRestriction
+
+  before_action :restrict_readonly_mode, only: %i[create destroy]
 
   def create
     card = Card.find(params[:card_id])

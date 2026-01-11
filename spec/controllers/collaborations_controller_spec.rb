@@ -84,4 +84,47 @@ describe CollaborationsController, type: :controller do
       it { expect{ subject }.to_not change{ Collaboration.count } }
     end
   end
+
+  describe 'readonly mode restriction' do
+    let(:project) { FactoryBot.create(:project) }
+    let!(:collaboration) { FactoryBot.create(:collaboration, project: project) }
+    let(:collaborator) { FactoryBot.create(:user) }
+
+    before do
+      sign_in project.owner
+      allow(SystemSetting).to receive(:readonly_mode_enabled?).and_return(true)
+    end
+
+    describe 'POST create' do
+      it 'does not create a collaboration' do
+        expect {
+          post :create,
+            params: { owner_name: project.owner, project_id: project, collaborator_name: collaborator.slug },
+            xhr: true
+        }.not_to change(Collaboration, :count)
+      end
+
+      it 'returns 503' do
+        post :create,
+          params: { owner_name: project.owner, project_id: project, collaborator_name: collaborator.slug },
+          xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+
+    describe 'DELETE destroy' do
+      before { sign_in collaboration.owner }
+
+      it 'does not delete the collaboration' do
+        expect {
+          delete :destroy, params: { id: collaboration.id }, xhr: true
+        }.not_to change(Collaboration, :count)
+      end
+
+      it 'returns 503' do
+        delete :destroy, params: { id: collaboration.id }, xhr: true
+        expect(response).to have_http_status(:service_unavailable)
+      end
+    end
+  end
 end

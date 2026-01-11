@@ -1,11 +1,13 @@
 class StatesController < ApplicationController
   include SpamKeywordDetection
+  include ReadonlyModeRestriction
 
   before_action :load_owner
   before_action :load_project
   before_action :build_state, only: [:new, :create]
   before_action :load_state, only: [:edit, :show, :update, :destroy]
   before_action :update_contribution, only: [:create, :update]
+  before_action :restrict_readonly_mode, only: %i[create update destroy]
   after_action :update_project, only: [:create, :update, :destroy]
 
   authorize_resource class: Card::State.name

@@ -88,4 +88,184 @@ describe SystemSetting do
       expect(SystemSetting.recaptcha_score_threshold).to eq 0.8
     end
   end
+
+  describe ".readonly_mode_enabled?" do
+    before do
+      SystemSetting.clear_readonly_mode_cache
+    end
+
+    context "when not set" do
+      it "returns false" do
+        expect(SystemSetting.readonly_mode_enabled?).to be false
+      end
+    end
+
+    context "when enabled" do
+      before { SystemSetting.set(SystemSetting::READONLY_MODE_ENABLED, "true") }
+
+      it "returns true" do
+        expect(SystemSetting.readonly_mode_enabled?).to be true
+      end
+    end
+
+    context "when disabled" do
+      before { SystemSetting.set(SystemSetting::READONLY_MODE_ENABLED, "false") }
+
+      it "returns false" do
+        expect(SystemSetting.readonly_mode_enabled?).to be false
+      end
+    end
+
+    context "when enabled with expired expires_at" do
+      before do
+        SystemSetting.set(SystemSetting::READONLY_MODE_ENABLED, "true")
+        SystemSetting.set(SystemSetting::READONLY_MODE_EXPIRES_AT, 1.hour.ago.iso8601)
+      end
+
+      it "returns false and disables the mode" do
+        expect(SystemSetting.readonly_mode_enabled?).to be false
+        expect(SystemSetting.get(SystemSetting::READONLY_MODE_ENABLED)).to eq "false"
+      end
+    end
+
+    context "when enabled with future expires_at" do
+      before do
+        SystemSetting.set(SystemSetting::READONLY_MODE_ENABLED, "true")
+        SystemSetting.set(SystemSetting::READONLY_MODE_EXPIRES_AT, 1.hour.from_now.iso8601)
+      end
+
+      it "returns true" do
+        expect(SystemSetting.readonly_mode_enabled?).to be true
+      end
+    end
+  end
+
+  describe ".readonly_mode_expires_at" do
+    context "when not set" do
+      it "returns nil" do
+        expect(SystemSetting.readonly_mode_expires_at).to be_nil
+      end
+    end
+
+    context "when set with valid datetime" do
+      let(:expires_at) { 1.hour.from_now.change(usec: 0) }
+
+      before { SystemSetting.set(SystemSetting::READONLY_MODE_EXPIRES_AT, expires_at.iso8601) }
+
+      it "returns the datetime" do
+        expect(SystemSetting.readonly_mode_expires_at).to eq expires_at
+      end
+    end
+
+    context "when set with invalid value" do
+      before { SystemSetting.set(SystemSetting::READONLY_MODE_EXPIRES_AT, "invalid") }
+
+      it "returns nil" do
+        expect(SystemSetting.readonly_mode_expires_at).to be_nil
+      end
+    end
+  end
+
+  describe ".enable_readonly_mode!" do
+    before do
+      SystemSetting.clear_readonly_mode_cache
+      allow(DisableReadonlyModeJob).to receive_message_chain(:set, :perform_later)
+    end
+
+    context "without expires_at" do
+      it "enables readonly mode" do
+        SystemSetting.enable_readonly_mode!
+        expect(SystemSetting.readonly_mode_enabled?).to be true
+      end
+
+      it "does not schedule a job" do
+        SystemSetting.enable_readonly_mode!
+        expect(DisableReadonlyModeJob).not_to have_received(:set)
+      end
+    end
+
+    context "with expires_at" do
+      let(:expires_at) { 1.hour.from_now }
+
+      it "enables readonly mode with expires_at" do
+        SystemSetting.enable_readonly_mode!(expires_at: expires_at)
+        expect(SystemSetting.readonly_mode_enabled?).to be true
+        expect(SystemSetting.readonly_mode_expires_at).to be_within(1.second).of(expires_at)
+      end
+
+      it "schedules the disable job" do
+        job_double = double
+        allow(DisableReadonlyModeJob).to receive(:set).with(wait_until: expires_at).and_return(job_double)
+        allow(job_double).to receive(:perform_later)
+
+        SystemSetting.enable_readonly_mode!(expires_at: expires_at)
+
+        expect(DisableReadonlyModeJob).to have_received(:set).with(wait_until: expires_at)
+        expect(job_double).to have_received(:perform_later)
+      end
+    end
+  end
+
+  describe ".disable_readonly_mode!" do
+    before do
+      SystemSetting.set(SystemSetting::READONLY_MODE_ENABLED, "true")
+      SystemSetting.set(SystemSetting::READONLY_MODE_EXPIRES_AT, 1.hour.from_now.iso8601)
+      SystemSetting.clear_readonly_mode_cache
+    end
+
+    it "disables readonly mode" do
+      SystemSetting.disable_readonly_mode!
+      expect(SystemSetting.readonly_mode_enabled?).to be false
+    end
+
+    it "clears expires_at" do
+      SystemSetting.disable_readonly_mode!
+      expect(SystemSetting.readonly_mode_expires_at).to be_nil
+    end
+
+    it "clears the cache" do
+      expect(Rails.cache).to receive(:delete).with(SystemSetting::CACHE_KEY_READONLY_MODE)
+      SystemSetting.disable_readonly_mode!
+    end
+
+    it "logs the action" do
+      allow(Rails.logger).to receive(:info).and_call_original
+      expect(Rails.logger).to receive(:info).with("[ReadonlyMode] Disabled.")
+      SystemSetting.disable_readonly_mode!
+    end
+  end
+
+  describe ".clear_readonly_mode_cache" do
+    it "deletes the cache key" do
+      expect(Rails.cache).to receive(:delete).with(SystemSetting::CACHE_KEY_READONLY_MODE)
+      SystemSetting.clear_readonly_mode_cache
+    end
+  end
+
+  describe "cache behavior" do
+    before do
+      SystemSetting.clear_readonly_mode_cache
+    end
+
+    it "uses Rails.cache.fetch for readonly_mode_enabled?" do
+      expect(Rails.cache).to receive(:fetch)
+        .with(SystemSetting::CACHE_KEY_READONLY_MODE, expires_in: 1.minute)
+        .and_call_original
+      SystemSetting.readonly_mode_enabled?
+    end
+  end
+
+  describe "constants" do
+    it "defines READONLY_MODE_ENABLED key" do
+      expect(SystemSetting::READONLY_MODE_ENABLED).to eq("readonly_mode_enabled")
+    end
+
+    it "defines READONLY_MODE_EXPIRES_AT key" do
+      expect(SystemSetting::READONLY_MODE_EXPIRES_AT).to eq("readonly_mode_expires_at")
+    end
+
+    it "defines CACHE_KEY_READONLY_MODE" do
+      expect(SystemSetting::CACHE_KEY_READONLY_MODE).to eq("system_setting:readonly_mode")
+    end
+  end
 end
