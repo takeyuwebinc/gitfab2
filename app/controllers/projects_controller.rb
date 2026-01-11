@@ -1,4 +1,6 @@
 class ProjectsController < ApplicationController
+  include SpamKeywordDetection
+
   layout 'project'
 
   before_action :load_owner, except: [:index, :new, :create, :fork, :change_order, :search]
@@ -46,6 +48,12 @@ class ProjectsController < ApplicationController
       return
     end
 
+    if detect_spam_keyword(contents: [ @project.name, @project.title, @project.description ], content_type: "Project")
+      flash.now[:alert] = spam_keyword_rejection_message
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     if @project.save
       redirect_to edit_project_path(@owner, @project)
     else
@@ -60,6 +68,23 @@ class ProjectsController < ApplicationController
     parameters = project_params
     if parameters.present? && parameters[:name].present?
       parameters[:name] = parameters[:name].downcase
+    end
+
+    contents_to_check = [
+      parameters&.dig(:name),
+      parameters&.dig(:title),
+      parameters&.dig(:description)
+    ].compact
+
+    if contents_to_check.present? && detect_spam_keyword(contents: contents_to_check, content_type: "Project")
+      respond_to do |format|
+        format.json { render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity }
+        format.html do
+          flash.now[:alert] = spam_keyword_rejection_message
+          render :edit, status: :unprocessable_entity
+        end
+      end
+      return
     end
 
     if @project.update parameters

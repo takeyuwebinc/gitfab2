@@ -1,0 +1,7 @@
+#admin-spam-keywords-new
+  h2.h2 スパムキーワード追加
+
+  = render "form", spam_keyword: @spam_keyword
+
+  .mt-3
+    = link_to "戻る", admin_spam_keywords_path, class: "btn btn-secondary"

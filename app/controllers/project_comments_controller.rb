@@ -1,7 +1,16 @@
 class ProjectCommentsController < ApplicationController
+  include SpamKeywordDetection
+
   def create
     project = Project.find(params[:project_id])
     project_comment = ProjectComment.build_from(project, current_user, project_comment_params)
+
+    if detect_spam_keyword(contents: project_comment.body, content_type: "ProjectComment")
+      redirect_to project_path(project.owner, project, anchor: "project-comment-form"),
+                  alert: spam_keyword_rejection_message,
+                  flash: { project_comment_body: project_comment.body }
+      return
+    end
 
     if project_comment.save
       notify_users(project_comment)

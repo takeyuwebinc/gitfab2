@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_09_014517) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_11_015446) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -247,6 +247,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_09_014517) do
     t.index ["owner_type", "owner_id"], name: "index_projects_owner"
     t.index ["slug", "owner_type", "owner_id"], name: "index_projects_slug_owner", unique: true
     t.index ["updated_at"], name: "index_projects_updated_at"
+  end
+
+  create_table "spam_keywords", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "keyword", null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["keyword"], name: "index_spam_keywords_on_keyword", unique: true
   end
 
   create_table "spammers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

@@ -1,0 +1,33 @@
+#admin-spam-keywords-index
+  h2.h2 スパムキーワード管理
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  .mb-3
+    = link_to "新規追加", new_admin_spam_keyword_path, class: "btn btn-primary"
+
+  table.table
+    thead
+      tr
+        th キーワード
+        th ステータス
+        th 登録日時
+        th 操作
+    tbody
+      - @spam_keywords.each do |spam_keyword|
+        tr
+          td = spam_keyword.keyword
+          td
+            - if spam_keyword.enabled?
+              span.text-success 有効
+            - else
+              span.text-danger 無効
+          td = l(spam_keyword.created_at, format: :short)
+          td.d-flex.gap-1
+            = link_to "編集", edit_admin_spam_keyword_path(spam_keyword), class: "btn btn-sm btn-outline-secondary"
+            = button_to spam_keyword.enabled? ? "無効にする" : "有効にする", toggle_enabled_admin_spam_keyword_path(spam_keyword), method: :patch, class: "btn btn-sm btn-outline-warning"
+            = button_to "削除", admin_spam_keyword_path(spam_keyword), method: :delete, data: { confirm: "このスパムキーワードを削除しますか？" }, class: "btn btn-sm btn-outline-danger"
+
+  = paginate(@spam_keywords)
