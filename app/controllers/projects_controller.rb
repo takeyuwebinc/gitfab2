@@ -2,6 +2,7 @@ class ProjectsController < ApplicationController
   include SpamKeywordDetection
   include SpammerRestriction
   include ReadonlyModeRestriction
+  include RecaptchaDetectionLogging
 
   layout 'project'
 
@@ -44,13 +45,14 @@ class ProjectsController < ApplicationController
     slug = project_params[:title].gsub(/\W|\s/, 'x').downcase
     @project.name = slug
 
-    if spammer_silent_reject?("project_create")
+    if spammer_silent_reject?("project_create", content_type: "Project")
       redirect_to spammer_redirect_path
       return
     end
 
     recaptcha_result = RecaptchaVerificationService.new(request).verify(action: "project")
     if recaptcha_result.failure?
+      record_recaptcha_detection_log("Project", recaptcha_result.detection_reason)
       flash.now[:alert] = recaptcha_result.error_message
       render :new, status: :unprocessable_entity
       return

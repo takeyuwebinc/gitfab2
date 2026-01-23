@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_11_015446) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_23_090055) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -249,6 +249,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_11_015446) do
     t.index ["updated_at"], name: "index_projects_updated_at"
   end
 
+  create_table "spam_detection_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "スパム検出ログ", force: :cascade do |t|
+    t.integer "user_id", null: false, comment: "ブロックされたユーザーのID"
+    t.string "ip_address", null: false, comment: "リクエスト元のIPアドレス"
+    t.string "detection_method", null: false, comment: "検出方法（keyword, spammer, recaptcha）"
+    t.text "detection_reason", comment: "検出理由の詳細情報"
+    t.string "content_type", null: false, comment: "コンテンツ種別（Project, NoteCard等）"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_spam_detection_logs_on_user_id"
+  end
+
   create_table "spam_keywords", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "keyword", null: false
     t.boolean "enabled", default: true, null: false
@@ -320,6 +331,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_11_015446) do
   add_foreign_key "project_access_statistics", "projects"
   add_foreign_key "project_comments", "projects"
   add_foreign_key "project_comments", "users"
+  add_foreign_key "spam_detection_logs", "users"
   add_foreign_key "spammers", "users"
   add_foreign_key "tags", "projects"
   add_foreign_key "tags", "users", name: "fk_tags_user_id"
