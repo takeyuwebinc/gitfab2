@@ -1,0 +1,31 @@
+#admin-spam-detection-logs-index
+  h2.h2 スパム検出ログ
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  table.table
+    thead
+      tr
+        th 検出日時
+        th ユーザー
+        th IPアドレス
+        th 検出方法
+        th 検出理由
+        th コンテンツ種別
+    tbody
+      - @spam_detection_logs.each do |log|
+        tr
+          td = l(log.created_at, format: :short)
+          td
+            - if log.user
+              = link_to log.user.name, owner_path(log.user)
+            - else
+              | -
+          td = log.ip_address
+          td = log.detection_method
+          td = log.detection_reason.presence || "-"
+          td = log.content_type
+
+  = paginate(@spam_detection_logs)

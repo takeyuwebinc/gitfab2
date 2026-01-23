@@ -43,6 +43,7 @@ Rails.application.routes.draw do
         patch :toggle_enabled
       end
     end
+    resources :spam_detection_logs, only: %i[index]
     resources :announcements
   end
 
