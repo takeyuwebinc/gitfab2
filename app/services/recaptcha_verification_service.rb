@@ -46,7 +46,7 @@ class RecaptchaVerificationService
       secret_key: Recaptcha.configuration.secret_key
     )
 
-    score = recaptcha_reply.score
+    score = recaptcha_reply&.score
     log_score(success, threshold)
 
     if success
