@@ -13,6 +13,33 @@ RUN apt-get update -qq \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+# GitHub CLI
+RUN install -m 0755 -d /etc/apt/keyrings \
+ && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+ && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      > /etc/apt/sources.list.d/github-cli.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends gh \
+ && rm -rf /var/lib/apt/lists/*
+
+# Docker CLI (outside-of-docker 用、ホストの /var/run/docker.sock を compose でマウントする)
+RUN install -m 0755 -d /etc/apt/keyrings \
+ && curl -fsSL https://download.docker.com/linux/debian/gpg \
+      -o /etc/apt/keyrings/docker.asc \
+ && chmod a+r /etc/apt/keyrings/docker.asc \
+ && . /etc/os-release \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+      > /etc/apt/sources.list.d/docker.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      docker-ce-cli \
+      docker-buildx-plugin \
+      docker-compose-plugin \
+      sudo \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir /src
 WORKDIR /src
 
@@ -25,6 +52,15 @@ ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN npm install -g npm-check-updates
 
 RUN useradd -m --shell /bin/bash --uid 1000 ruby
+
+# ruby ユーザーを docker グループに所属させる。
+# Debian/Ubuntu の docker パッケージは GID 999 を使うため、ホスト側もほぼ同値。
+# 異なる場合は sync-docker-gid.sh が起動時に調整する。
+ARG DOCKER_GID=999
+RUN groupadd -g ${DOCKER_GID} docker && usermod -aG docker ruby
+RUN echo 'ruby ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ruby \
+ && chmod 0440 /etc/sudoers.d/ruby
+
 USER ruby
 
 ENV EDITOR=vim

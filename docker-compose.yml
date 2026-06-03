@@ -27,6 +27,7 @@ services:
       /bin/sh -c "rm -f tmp/pids/server.pid && cp config/database.ymls/development.yml config/database.yml && bin/dev"
     volumes:
       - .:/src
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 3000:3000
     tty: true

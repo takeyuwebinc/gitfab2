@@ -8,12 +8,6 @@
   ],
   "service": "app",
   "workspaceFolder": "/src",
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-  },
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "${localEnv:HOME}/.claude"
   },
@@ -33,9 +27,11 @@
   },
   // Uncomment to connect as root instead. More info: https://containers.dev/implementors/json_reference/#remoteUser.
   "remoteUser": "ruby",
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.config/gh",
   "mounts": [
-    "source=${localEnv:HOME}/.claude,target=${localEnv:HOME}/.claude,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.claude,target=${localEnv:HOME}/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/gh,target=/home/ruby/.config/gh,type=bind,consistency=cached"
   ],
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": ".devcontainer/claude-setup.sh && cp config/database.ymls/development.yml config/database.yml"
+  "postCreateCommand": "bash .devcontainer/sync-docker-gid.sh && bash .devcontainer/claude-setup.sh && cp config/database.ymls/development.yml config/database.yml"
 }
