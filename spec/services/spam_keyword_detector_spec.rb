@@ -91,6 +91,72 @@ RSpec.describe SpamKeywordDetector do
         expect(result).to be_in([ spam_keyword1, spam_keyword2 ])
       end
     end
+
+    context '全角・半角が混在する場合' do
+      context '半角で登録したキーワードの場合' do
+        let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+
+        it '全角で投稿された文字列にマッチすること' do
+          result = described_class.detect(user: user, contents: 'ｃａｓｉｎｏ')
+          expect(result).to eq(spam_keyword)
+        end
+      end
+
+      context '全角で登録したキーワードの場合' do
+        let!(:spam_keyword) { create(:spam_keyword, keyword: 'ＣＡＳＩＮＯ', enabled: true) }
+
+        it '半角で投稿された文字列にマッチすること（キーワード側も正規化される）' do
+          result = described_class.detect(user: user, contents: 'casino')
+          expect(result).to eq(spam_keyword)
+        end
+      end
+    end
+
+    context '記号・空白で分断されている場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'バイアグラ', enabled: true) }
+
+      it 'アンダースコアで分断された投稿を検出すること' do
+        result = described_class.detect(user: user, contents: 'バ_イ_ア_グ_ラ')
+        expect(result).to eq(spam_keyword)
+      end
+
+      it 'ピリオドで分断された投稿を検出すること' do
+        result = described_class.detect(user: user, contents: 'バ.イ.ア.グ.ラ')
+        expect(result).to eq(spam_keyword)
+      end
+
+      it '空白で分断された投稿を検出すること' do
+        result = described_class.detect(user: user, contents: 'バ イ ア グ ラ')
+        expect(result).to eq(spam_keyword)
+      end
+    end
+
+    context 'ゼロ幅文字が挿入されている場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'casino', enabled: true) }
+
+      it 'ゼロ幅スペースを挿入した投稿を検出すること' do
+        result = described_class.detect(user: user, contents: "ca​si​no")
+        expect(result).to eq(spam_keyword)
+      end
+    end
+
+    context '区切り記号入りで登録したキーワードの場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: 'ca-si-no', enabled: true) }
+
+      it 'キーワード側も正規化され、区切りなしの投稿にマッチすること' do
+        result = described_class.detect(user: user, contents: 'casino')
+        expect(result).to eq(spam_keyword)
+      end
+    end
+
+    context '正規化後に空文字となるキーワードが登録されている場合' do
+      let!(:spam_keyword) { create(:spam_keyword, keyword: '---', enabled: true) }
+
+      it '無関係な投稿を誤検知しないこと（全件一致を起こさない）' do
+        result = described_class.detect(user: user, contents: 'completely unrelated text')
+        expect(result).to be_nil
+      end
+    end
   end
 
   describe '.detect_with_logging' do
