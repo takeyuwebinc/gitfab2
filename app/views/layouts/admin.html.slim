@@ -7,5 +7,8 @@
 
 - content_for :content do
   #content style="background-color: white; margin: 40px auto; padding: 30px 40px;"
+    nav#admin-nav.nav.flex-row
+      = link_to '管理ダッシュボード', admin_root_path, class: 'nav-link admin-nav-home'
+      = render 'admin/shared/menu_links'
     = yield
 = render "layouts/base_layout"
