@@ -456,4 +456,25 @@ describe User do
 
     it { is_expected.to eq [active] }
   end
+
+  describe '#spam_undetect!' do
+    subject { user.spam_undetect! }
+
+    let(:user) { FactoryBot.create(:user) }
+
+    context 'Spammer 登録がある場合' do
+      before { FactoryBot.create(:spammer, user: user) }
+
+      it 'Spammer 登録を解除する' do
+        expect{ subject }.to change{ user.reload.spammer? }.from(true).to(false)
+      end
+    end
+
+    context 'Spammer 登録が無い場合' do
+      it 'エラーにならず何もしない' do
+        expect{ subject }.not_to raise_error
+        expect(user.reload.spammer?).to be false
+      end
+    end
+  end
 end

@@ -47,7 +47,9 @@ class Project < ApplicationRecord
   has_many :note_cards, class_name: 'Card::NoteCard', dependent: :destroy
   has_many :states, class_name: 'Card::State', dependent: :destroy
   has_many :tags, dependent: :destroy
+  has_many :visible_tags, -> { not_spam }, class_name: 'Tag'
   has_many :usages, class_name: 'Card::Usage', dependent: :destroy
+  has_many :visible_usages, -> { not_spam }, class_name: 'Card::Usage'
   has_many :project_comments, dependent: :destroy
   has_many :visible_project_comments, -> { not_spam }, class_name: 'ProjectComment'
   has_many :project_access_logs, dependent: :destroy
@@ -71,6 +73,9 @@ class Project < ApplicationRecord
   scope :noted, -> { joins(:note_cards).where.not(cards: { id: nil }) }
   scope :ordered_by_owner, -> { order(:owner_id) }
   scope :published, -> { active.where(is_private: false) }
+  # スパム認定により非表示化されたプロジェクト。spam_hidden_at の有無で
+  # 通常削除（soft_destroy!）と区別する。
+  scope :spam_hidden, -> { where.not(spam_hidden_at: nil) }
 
   # draft全文検索
   scope :search_draft, -> (text) do
@@ -166,6 +171,23 @@ class Project < ApplicationRecord
     end
   end
 
+  # スパム認定でプロジェクトを非表示にする。is_deleted=true で非表示化し、
+  # spam_hidden_at に認定日時を記録する。spam_hidden_at の有無により通常削除
+  # （soft_destroy! による匿名化・関連レコード削除）と区別でき、認定の取消・
+  # 復元の対象を特定できる。title/name・関連レコードは保持し、復元可能性のため
+  # 破壊的な soft_destroy! とは分けて非破壊で行う。失敗時は例外を送出する。
+  def hide_as_spam!
+    update!(is_deleted: true, spam_hidden_at: Time.current)
+  end
+
+  # スパム認定を取り消し、プロジェクトを再表示する。is_deleted=false に戻し、
+  # スパム認定マーカー spam_hidden_at を nil に戻す。hide_as_spam! の対であり、
+  # 非破壊認定により保持された title/name・関連レコードはそのまま再表示される。
+  # 失敗時は例外を送出する。
+  def unhide_as_spam!
+    update!(is_deleted: false, spam_hidden_at: nil)
+  end
+
   def update_draft!
     update!(draft: generate_draft)
   end
@@ -189,7 +211,7 @@ class Project < ApplicationRecord
       states.each do |state|
         lines << ActionController::Base.helpers.strip_tags(state.description)
       end
-      tags.each do |t|
+      tags.reject(&:spam?).each do |t|
         lines << t.generate_draft
       end
       lines.join("\n")

@@ -79,6 +79,21 @@ describe UsagesController, type: :controller do
         }.not_to change(Card::Usage, :count)
       end
     end
+
+    context 'スパム投稿者の場合' do
+      before do
+        sign_in owner
+        create(:spammer, user: owner)
+        project.usages.destroy_all
+        post :create, params: { owner_name: owner, project_id: project.name, usage: { title: 'title' } }, xhr: true
+        project.reload
+      end
+
+      it 'Usage は作成されるがスパムとして記録されること' do
+        expect(project.usages.count).to eq 1
+        expect(project.usages.last).to be_spam
+      end
+    end
   end
 
   describe 'PATCH update' do

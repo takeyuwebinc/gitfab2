@@ -28,7 +28,7 @@ section#basic-informations
           label
             = "Tags:"
           ul.tags
-            - @project.tags.each do |tag|
+            - @project.visible_tags.each do |tag|
               = render "tags/tag", tag: tag
           - if current_user
             = form_with(scope: :tag, url: project_tags_path(@owner, @project), html: {id: "tag-form"}, local: false) do |f|

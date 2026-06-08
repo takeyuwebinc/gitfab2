@@ -22,7 +22,7 @@
 #
 
 class ProjectComment < ApplicationRecord
-  include SpamCommentable
+  include SpamMarkable
   belongs_to :user
   belongs_to :project
 

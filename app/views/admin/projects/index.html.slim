@@ -7,89 +7,113 @@
 
   = form_tag admin_projects_path, method: :get do
     = search_field_tag(:q, params[:q])
+    label
+      = check_box_tag 'status', 'spam', @status == 'spam'
+      | スパム
     = submit_tag('Search')
 
-  = form_tag batch_spam_admin_projects_path, method: :post, id: 'batch-spam-form' do
-    .mb-3 style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;"
-      span#selected-count style="color: #666;"
-      = submit_tag 'まとめてスパム認定', id: 'batch-spam-button', disabled: true, data: { confirm: 'スパム認定しますか？' }
-
+  - if @status == 'spam'
     table.table
       thead
         tr
-          th.select style="width: 40px"
-            = check_box_tag 'select_all', '1', false, id: 'select-all-checkbox'
           th.name
             | プロジェクト名
-          th.publish
-            | 公開ページ
+          th.designated
+            | スパム認定日時
           th.management
-            | 管理
+            | 操作
       tbody
         - @projects.each do |project|
           tr.project
-            td.select
-              = check_box_tag 'project_ids[]', project.id, false, class: 'project-checkbox'
             td
               = project.title_with_owner_name
             td
-              = project.is_private ? '-' : link_to('Open', project_path(project.owner, project), target: '_blank', rel: 'noopener')
+              = project.spam_hidden_at&.strftime('%Y-%m-%d %H:%M')
             td
-              = link_to('Manage', admin_project_path(project.id), target: '_blank', rel: 'noopener')
+              = button_to 'スパム認定取消', admin_project_spam_path(project), method: :delete, data: { confirm: 'スパム認定を取り消しますか？' }
+  - else
+    = form_tag batch_spam_admin_projects_path, method: :post, id: 'batch-spam-form' do
+      .mb-3 style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;"
+        span#selected-count style="color: #666;"
+        = submit_tag 'まとめてスパム認定', id: 'batch-spam-button', disabled: true, data: { confirm: 'スパム認定しますか？' }
+
+      table.table
+        thead
+          tr
+            th.select style="width: 40px"
+              = check_box_tag 'select_all', '1', false, id: 'select-all-checkbox'
+            th.name
+              | プロジェクト名
+            th.publish
+              | 公開ページ
+            th.management
+              | 管理
+        tbody
+          - @projects.each do |project|
+            tr.project
+              td.select
+                = check_box_tag 'project_ids[]', project.id, false, class: 'project-checkbox'
+              td
+                = project.title_with_owner_name
+              td
+                = project.is_private ? '-' : link_to('Open', project_path(project.owner, project), target: '_blank', rel: 'noopener')
+              td
+                = link_to('Manage', admin_project_path(project.id), target: '_blank', rel: 'noopener')
 
   = paginate(@projects)
 
-javascript:
-  document.addEventListener('DOMContentLoaded', function() {
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    const projectCheckboxes = document.querySelectorAll('.project-checkbox');
-    const selectedCountEl = document.getElementById('selected-count');
-    const batchSpamButton = document.getElementById('batch-spam-button');
-    const batchSpamForm = document.getElementById('batch-spam-form');
+  - if @status != 'spam'
+    javascript:
+      document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const projectCheckboxes = document.querySelectorAll('.project-checkbox');
+        const selectedCountEl = document.getElementById('selected-count');
+        const batchSpamButton = document.getElementById('batch-spam-button');
+        const batchSpamForm = document.getElementById('batch-spam-form');
 
-    function getSelectedCount() {
-      return document.querySelectorAll('.project-checkbox:checked').length;
-    }
+        function getSelectedCount() {
+          return document.querySelectorAll('.project-checkbox:checked').length;
+        }
 
-    function updateSelectedCount() {
-      const checkedCount = getSelectedCount();
-      if (checkedCount > 0) {
-        selectedCountEl.textContent = checkedCount + '件選択中';
-      } else {
-        selectedCountEl.textContent = '';
-      }
-      batchSpamButton.disabled = checkedCount === 0;
-      updateConfirmMessage();
-    }
+        function updateSelectedCount() {
+          const checkedCount = getSelectedCount();
+          if (checkedCount > 0) {
+            selectedCountEl.textContent = checkedCount + '件選択中';
+          } else {
+            selectedCountEl.textContent = '';
+          }
+          batchSpamButton.disabled = checkedCount === 0;
+          updateConfirmMessage();
+        }
 
-    function updateSelectAllState() {
-      const allChecked = projectCheckboxes.length > 0 &&
-        getSelectedCount() === projectCheckboxes.length;
-      selectAllCheckbox.checked = allChecked;
-    }
+        function updateSelectAllState() {
+          const allChecked = projectCheckboxes.length > 0 &&
+            getSelectedCount() === projectCheckboxes.length;
+          selectAllCheckbox.checked = allChecked;
+        }
 
-    selectAllCheckbox.addEventListener('change', function() {
-      projectCheckboxes.forEach(function(checkbox) {
-        checkbox.checked = selectAllCheckbox.checked;
+        selectAllCheckbox.addEventListener('change', function() {
+          projectCheckboxes.forEach(function(checkbox) {
+            checkbox.checked = selectAllCheckbox.checked;
+          });
+          updateSelectedCount();
+        });
+
+        projectCheckboxes.forEach(function(checkbox) {
+          checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateSelectedCount();
+          });
+        });
+
+        function updateConfirmMessage() {
+          const count = getSelectedCount();
+          batchSpamButton.dataset.confirm = count + '件のプロジェクトをスパム認定しますか？';
+        }
+
+        batchSpamForm.addEventListener('submit', function(e) {
+          if (getSelectedCount() === 0) {
+            e.preventDefault();
+          }
+        });
       });
-      updateSelectedCount();
-    });
-
-    projectCheckboxes.forEach(function(checkbox) {
-      checkbox.addEventListener('change', function() {
-        updateSelectAllState();
-        updateSelectedCount();
-      });
-    });
-
-    function updateConfirmMessage() {
-      const count = getSelectedCount();
-      batchSpamButton.dataset.confirm = count + '件のプロジェクトをスパム認定しますか？';
-    }
-
-    batchSpamForm.addEventListener('submit', function(e) {
-      if (getSelectedCount() === 0) {
-        e.preventDefault();
-      }
-    });
-  });

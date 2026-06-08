@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       collection do
         post :batch_spam
       end
+      resource :spam, only: :destroy, module: :projects
     end
     get 'background', to: 'background#index', as: :background
     put 'background', to: 'background#update'
@@ -35,6 +36,27 @@ Rails.application.routes.draw do
       resource :spam, only: [:create, :destroy], module: :card_comments
     end
     namespace :card_comments do
+      resource :spam_batch, only: :create
+    end
+    resources :usages, only: :index do
+      resource :approval, only: [:create, :destroy], module: :usages
+      resource :spam, only: [:create, :destroy], module: :usages
+    end
+    namespace :usages do
+      resource :spam_batch, only: :create
+    end
+    resources :annotations, only: :index do
+      resource :approval, only: [:create, :destroy], module: :annotations
+      resource :spam, only: [:create, :destroy], module: :annotations
+    end
+    namespace :annotations do
+      resource :spam_batch, only: :create
+    end
+    resources :tags, only: :index do
+      resource :approval, only: [:create, :destroy], module: :tags
+      resource :spam, only: [:create, :destroy], module: :tags
+    end
+    namespace :tags do
       resource :spam_batch, only: :create
     end
     resources :spammers, only: %i[index destroy]

@@ -22,7 +22,7 @@
 #
 
 class CardComment < ApplicationRecord
-  include SpamCommentable
+  include SpamMarkable
   belongs_to :card, counter_cache: :comments_count
   belongs_to :user
 

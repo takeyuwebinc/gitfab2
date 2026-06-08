@@ -96,6 +96,24 @@ describe AnnotationsController, type: :controller do
         }.not_to change(Card::Annotation, :count)
       end
     end
+
+    context 'スパム投稿者の場合' do
+      let!(:state) { project.states.create type: Card::State.name, description: 'foo' }
+
+      before do
+        sign_in user
+        create(:spammer, user: user)
+      end
+
+      it 'Annotation は作成されるがスパムとして記録されること' do
+        expect {
+          post :create,
+            params: { owner_name: user, project_id: project, state_id: state.id, annotation: { description: 'ann' } },
+            xhr: true
+        }.to change(Card::Annotation, :count).by(1)
+        expect(Card::Annotation.last).to be_spam
+      end
+    end
   end
 
   describe 'PATCH #update' do

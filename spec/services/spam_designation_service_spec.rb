@@ -14,6 +14,32 @@ RSpec.describe SpamDesignationService do
         expect { described_class.call([project]) }.to change { project.reload.is_deleted }.from(false).to(true)
       end
 
+      it 'スパム認定日時を記録する' do
+        expect { described_class.call([project]) }.to change { project.reload.spam_hidden_at }.from(nil)
+      end
+
+      it 'プロジェクトの title / name を変更しない' do
+        original_title = project.title
+        original_name = project.name
+        described_class.call([project])
+        project.reload
+        expect(project.title).to eq original_title
+        expect(project.name).to eq original_name
+      end
+
+      it 'プロジェクトの関連レコードを削除しない' do
+        create_list(:like, 2, project: project)
+        create_list(:note_card, 2, project: project)
+        create_list(:tag, 2, project: project)
+        project.reload
+
+        described_class.call([project])
+
+        expect(project.likes.count).to eq 2
+        expect(project.note_cards.count).to eq 2
+        expect(project.tags.count).to eq 2
+      end
+
       it '成功件数を返す' do
         result = described_class.call([project])
         expect(result.success).to eq 1
@@ -80,7 +106,7 @@ RSpec.describe SpamDesignationService do
       let(:project2) { create(:project, owner: user) }
 
       before do
-        allow(project2).to receive(:soft_destroy!).and_raise(ActiveRecord::RecordInvalid)
+        allow(project2).to receive(:hide_as_spam!).and_raise(ActiveRecord::RecordInvalid)
       end
 
       it '失敗したプロジェクトも残りのプロジェクトも正しく報告する' do

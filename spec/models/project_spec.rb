@@ -221,6 +221,23 @@ describe Project do
         tag2
       EOS
     end
+
+    it "excludes spam tags from the draft" do
+      tag1 = project.tags.build(name: 'tag1', user_id: owner.id)
+      tag1.save!
+      spam_tag = project.tags.build(name: 'spamtag', user_id: owner.id, status: :spam)
+      spam_tag.save!
+      project.update_draft!
+      expect(project.draft).to eq <<~EOS.chomp
+        name
+        title
+        description
+        user1
+        http://example.com
+        Tokyo
+        tag1
+      EOS
+    end
   end
 
   describe '#manageable_by?' do
@@ -269,6 +286,11 @@ describe Project do
       expect(project.name).to start_with('deleted-project-')
     end
 
+    it 'spam_hidden_at を記録しない（スパム認定と区別する）' do
+      subject
+      expect(project.spam_hidden_at).to be_nil
+    end
+
     it do
       expect{ subject }.to change{ project.likes.count }.from(2).to(0)
                        .and change{ project.note_cards.count }.from(2).to(0)
@@ -278,6 +300,85 @@ describe Project do
                        .and change{ project.figures.count }.from(2).to(0)
                        .and change{ project.tags.count }.from(2).to(0)
                        .and change{ project.collaborations.count }.from(2).to(0)
+    end
+  end
+
+  describe '#hide_as_spam!' do
+    subject { project.hide_as_spam! }
+
+    let!(:project) { FactoryBot.create([:user_project, :group_project].sample) }
+
+    before do
+      FactoryBot.create_list(:like, 2, project: project)
+      FactoryBot.create_list(:state, 2, project: project)
+      FactoryBot.create_list(:note_card, 2, project: project)
+      FactoryBot.create_list(:usage, 2, project: project)
+      FactoryBot.create_list(:project_comment, 2, project: project)
+      FactoryBot.create_list(:figure, 2, figurable: project)
+      FactoryBot.create_list(:tag, 2, project: project)
+      FactoryBot.create_list(:collaboration, 2, project: project)
+      project.reload
+    end
+
+    it 'is_deleted を true にする' do
+      expect{ subject }.to change{ project.reload.is_deleted }.from(false).to(true)
+    end
+
+    it 'spam_hidden_at に認定日時を記録する' do
+      expect{ subject }.to change{ project.reload.spam_hidden_at }.from(nil)
+      expect(project.spam_hidden_at).to be_present
+    end
+
+    it 'title / name を変更しない' do
+      original_title = project.title
+      original_name = project.name
+      subject
+      project.reload
+      expect(project.title).to eq original_title
+      expect(project.name).to eq original_name
+    end
+
+    it '関連レコードを削除しない' do
+      subject
+      expect(project.likes.count).to eq 2
+      expect(project.states.count).to eq 2
+      expect(project.note_cards.count).to eq 2
+      expect(project.usages.count).to eq 2
+      expect(project.project_comments.count).to eq 2
+      expect(project.figures.count).to eq 2
+      expect(project.tags.count).to eq 2
+      expect(project.collaborations.count).to eq 2
+    end
+  end
+
+  describe '#unhide_as_spam!' do
+    subject { project.unhide_as_spam! }
+
+    let!(:project) { FactoryBot.create([:user_project, :group_project].sample) }
+
+    before { project.hide_as_spam! }
+
+    it 'is_deleted を false に戻す' do
+      expect{ subject }.to change{ project.reload.is_deleted }.from(true).to(false)
+    end
+
+    it 'spam_hidden_at を nil に戻す' do
+      expect{ subject }.to change{ project.reload.spam_hidden_at }.to(nil)
+    end
+  end
+
+  describe '.spam_hidden' do
+    let!(:spam_project) { FactoryBot.create(:user_project).tap(&:hide_as_spam!) }
+    let!(:active_project) { FactoryBot.create(:user_project) }
+    let!(:soft_destroyed_project) { FactoryBot.create(:user_project).tap(&:soft_destroy!) }
+
+    it 'spam_hidden_at 有りのプロジェクトのみを返す' do
+      expect(described_class.spam_hidden).to include(spam_project)
+      expect(described_class.spam_hidden).not_to include(active_project)
+    end
+
+    it '通常削除（soft_destroy!）のプロジェクトは含まない' do
+      expect(described_class.spam_hidden).not_to include(soft_destroyed_project)
     end
   end
 end

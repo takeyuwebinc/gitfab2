@@ -31,8 +31,8 @@ class ProjectsController < ApplicationController
 
     ProjectAccessLog.log!(@project, current_user)
     @project_comments = @project.visible_project_comments.includes(:user).order(:id)
-    @states = @project.states.includes(:attachments, :contributors, :figures, visible_comments: [:user], annotations: [:attachments, :figures, :contributors, visible_comments: [:user]]).ordered_by_position
-    @usages = @project.usages.includes(:attachments, :figures, :contributors, contributions: [:contributor])
+    @states = @project.states.includes(:attachments, :contributors, :figures, visible_comments: [:user], visible_annotations: [:attachments, :figures, :contributors, visible_comments: [:user]]).ordered_by_position
+    @usages = @project.visible_usages.includes(:attachments, :figures, :contributors, contributions: [:contributor])
   end
 
   def new
@@ -190,7 +190,7 @@ class ProjectsController < ApplicationController
   def slideshow
     @project = @owner.projects.active.friendly.find(params[:project_id])
     @cards = @project.states.includes(:figures).ordered_by_position.map { |state|
-      [state] + state.annotations.includes(:figures).ordered_by_position
+      [state] + state.visible_annotations.includes(:figures).ordered_by_position
     }.flatten
     render layout: nil
   end

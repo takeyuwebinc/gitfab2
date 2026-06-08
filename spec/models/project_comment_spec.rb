@@ -108,8 +108,30 @@ describe ProjectComment do
 
     context 'when status is spam' do
       let(:status) { 'spam' }
-      it do
+      let(:project_comment) { create(:project_comment, status: status, user: comment_user) }
+      let(:comment_user) { create(:user) }
+
+      it 'status を unconfirmed に戻すこと' do
         expect { subject }.to change { project_comment.reload.status }.from('spam').to('unconfirmed')
+      end
+
+      context '投稿者がスパム投稿者として登録されているとき' do
+        before { create(:spammer, user: comment_user) }
+
+        it '投稿者のスパム投稿者登録を解除すること' do
+          expect { subject }.to change(Spammer, :count).by(-1)
+        end
+
+        it '投稿者が spammer でなくなること' do
+          subject
+          expect(comment_user.reload).not_to be_spammer
+        end
+      end
+
+      context '投稿者がスパム投稿者として登録されていないとき' do
+        it 'エラーにならず status のみ unconfirmed に戻すこと（冪等）' do
+          expect { subject }.to change { project_comment.reload.status }.from('spam').to('unconfirmed')
+        end
       end
     end
   end

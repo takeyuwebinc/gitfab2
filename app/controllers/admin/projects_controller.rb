@@ -2,8 +2,13 @@ class Admin::ProjectsController < Admin::ApplicationController
   before_action :load_project, only: [:show, :destroy]
 
   def index
-    @projects = Project.published.order(created_at: :desc)
-    @projects = @projects.search_draft(params[:q]) if params[:q]
+    @status = params[:status]
+    @projects = if @status == 'spam'
+                  Project.spam_hidden.order(spam_hidden_at: :desc)
+                else
+                  Project.published.order(created_at: :desc)
+                end
+    @projects = @projects.search_draft(params[:q]) if params[:q].present?
     @projects = @projects.page(params[:page])
   end
 
