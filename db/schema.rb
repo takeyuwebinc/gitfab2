@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_08_100101) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_110002) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -35,6 +35,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_08_100101) do
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.index ["attachable_type", "attachable_id"], name: "index_attachments_attachable"
+  end
+
+  create_table "audit_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "管理操作の監査ログ（全種別共通のメタデータ）", force: :cascade do |t|
+    t.integer "operator_id", null: false, comment: "操作者（管理者ユーザー）のID"
+    t.string "auditable_type", null: false
+    t.bigint "auditable_id", null: false, comment: "監査種別への委譲参照（delegated_type）"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "ip_address", comment: "操作者のリクエスト元IPアドレス"
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable"
+    t.index ["operator_id"], name: "index_audit_logs_on_operator_id"
   end
 
   create_table "black_lists", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "アクセスランキングブラックリスト", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
@@ -271,6 +282,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_08_100101) do
     t.index ["keyword"], name: "index_spam_keywords_on_keyword", unique: true
   end
 
+  create_table "spam_moderation_audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "スパム手動認定の監査ログ（種別別の詳細）", force: :cascade do |t|
+    t.integer "action", null: false, comment: "操作種別（0: 記録, 1: 取消）"
+    t.string "target_type", null: false
+    t.bigint "target_id", null: false, comment: "認定対象コンテンツ（種別＋ID、緩い参照）"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_spam_moderation_audits_on_target"
+  end
+
   create_table "spammers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "user_id", null: false
     t.timestamp "detected_at", comment: "スパムとして検知された日時"
@@ -318,6 +338,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_08_100101) do
     t.index ["slug"], name: "index_users_on_slug", unique: true
   end
 
+  add_foreign_key "audit_logs", "users", column: "operator_id"
   add_foreign_key "black_lists", "projects"
   add_foreign_key "black_lists", "users"
   add_foreign_key "card_comments", "cards"

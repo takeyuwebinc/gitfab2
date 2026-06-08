@@ -13,6 +13,15 @@ RSpec.describe Admin::ProjectComments::SpamsController, type: :controller do
         expect_any_instance_of(ProjectComment).to receive(:mark_spam!)
         is_expected.to redirect_to(admin_project_comments_path)
       end
+
+      it "監査ログに操作者とリクエスト元IPを記録すること" do
+        request.remote_addr = "203.0.113.5"
+        expect { subject }.to change(AuditLog, :count).by(1)
+        audit = AuditLog.last
+        expect(audit.operator).to eq user
+        expect(audit.ip_address).to eq "203.0.113.5"
+        expect(audit.auditable.action).to eq "marked"
+      end
     end
 
     context "without authority" do
