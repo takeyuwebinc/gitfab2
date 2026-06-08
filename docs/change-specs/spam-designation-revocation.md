@@ -50,8 +50,8 @@ UI・操作系はコメント/カード/タグのスパム管理（`Admin::Comme
 - **追加（サービス）**: 取消サービスを新設（認定サービスの対）。単一プロジェクトを受け、transaction 内で「owner（Group は取消時点の現メンバー）の Spammer 解除」と「`project.unhide_as_spam!`」を実行する。`target_users` の場合分け（User→owner / Group→現メンバー）は認定サービスと同一ロジックを踏襲する。成否（真偽値）を返し、コントローラが notice/alert を出し分ける（一括処理は無いため認定サービスの `Result` は用いない）。
 - **追加（ルート）**: `resources :projects` 配下に取消用のネスト `resource :spam, only: :destroy`（module: projects）を追加。`DELETE /admin/projects/:project_id/spam`。
 - **追加（コントローラ）**: `Admin::Projects::SpamsController#destroy` を新設。対象プロジェクトを取得し取消サービスを呼び、`?status=spam` の一覧へ notice/alert 付きでリダイレクトする。
-- **変更（コントローラ）**: `Admin::ProjectsController#index` に status フィルタを追加。`status=spam` のときスパム認定済み一覧（上記 scope）、それ以外は現状どおり `Project.published`。`project_comments#index` の `params[:status]` 方式に揃える。
-- **変更（ビュー）**: `admin/projects/index.html.slim` に status 切替リンクと、スパム認定済み一覧時の「スパム認定取消」ボタン（`button_to` で `DELETE` ＋確認ダイアログ）を追加。認定モード時は既存の一括認定フォームを維持し、取消モードでは表示しない。
+- **変更（コントローラ）**: `Admin::ProjectsController#index` に status フィルタを追加。`status=spam` のときスパム認定済み一覧（上記 scope）、それ以外は現状どおり `Project.published`。いずれもキーワード検索（`search_draft`）を適用する。`project_comments#index` の `params[:status]` 方式に揃える。
+- **変更（ビュー）**: `admin/projects/index.html.slim` の検索フォームに「スパム」チェックボックス（チェックで `status=spam` を送信）を追加し、認定対象一覧とスパム認定済み一覧を切り替える。スパム認定済み一覧時は「スパム認定取消」ボタン（`button_to` で `DELETE` ＋確認ダイアログ）を表示し、認定モード時は既存の一括認定フォームを維持、取消モードでは表示しない。
 - **不変更**: 認定経路（`#destroy` / `#batch_spam` / `SpamDesignationService`）、通常削除経路、`hide_as_spam!` は変更しない。
 - **関連スパムマークの独立性（2.4.5）**: 取消はプロジェクト配下のコメント/カード/タグの `SpamMarkable` status を変更しない。それらは各 `Admin::*` から個別に解除する。
 
