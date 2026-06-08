@@ -2,7 +2,11 @@
 
 ## 変更の目的
 
-スパム認定時の破壊的処理（title/name の匿名化・関連レコードの物理削除）を取りやめ、`is_deleted=true` による非表示化のみにする。これにより、後続の取消機能（要件2.4）で認定を元に戻せるようにする。背景・根拠は要件定義書 [spam-moderation-enhancement.md](../requirements/spam-moderation-enhancement.md) の 2.3.1 / 2.3.4。
+スパム認定時の破壊的処理（title/name の匿名化・関連レコードの物理削除）を取りやめ、非表示化（`is_deleted=true`）と認定日時の記録のみにする。これにより、後続の取消機能（要件2.4）で認定を元に戻せるようにする。
+
+`is_deleted=true` だけでは通常削除（ユーザー削除・退会・グループ削除）とスパム認定を区別できない。取消機能（2.4）が認定済みプロジェクトを一覧・特定できるよう、スパム認定であることを示すマーカー `spam_hidden_at`（認定日時）を併せて記録する。過去に削除済みのデータがスパム由来か否かは判別できなくてよい（マーカーは本変更以降の認定にのみ付与される）。
+
+背景・根拠は要件定義書 [spam-moderation-enhancement.md](../requirements/spam-moderation-enhancement.md) の 2.3.1 / 2.3.4。
 
 ## 現状
 
@@ -38,19 +42,23 @@
 
 ## 変更内容
 
-- **追加**: `Project` に**スパム認定専用の非破壊メソッド**（bang）を新設する。挙動は `is_deleted=true` の更新のみ。title/name の匿名化・関連レコードの物理削除は**行わない**。失敗時は例外を送出し、呼び出し側トランザクションでロールバック可能にする。
-- **変更**: `SpamDesignationService#designate` の `project.soft_destroy!` 呼び出しを、上記の新規非破壊メソッドの呼び出しに置き換える。`register_owner_as_spammer` は変更しない。
-- **不変更**: `Project#soft_destroy!` 本体および正規削除3経路（`ProjectsController#destroy` / `#destroy_or_render_edit`、`User#resign!`、`Group#soft_destroy_all!`）は従来どおり破壊的挙動を維持する。
+- **追加（スキーマ）**: `projects` に `spam_hidden_at`（datetime, nullable, index 付き）を追加する。スパム認定であることのマーカー兼認定日時。値の有無で通常削除と区別する。
+- **追加（メソッド）**: `Project#hide_as_spam!`（bang）を新設する。挙動は `is_deleted=true` と `spam_hidden_at` への認定日時記録のみ。title/name の匿名化・関連レコードの物理削除は**行わない**。失敗時は例外を送出し、呼び出し側トランザクションでロールバック可能にする。
+- **変更**: `SpamDesignationService#designate` の `project.soft_destroy!` 呼び出しを `project.hide_as_spam!` に置き換える。`register_owner_as_spammer` は変更しない。
+- **不変更**: `Project#soft_destroy!` 本体および正規削除3経路（`ProjectsController#destroy` / `#destroy_or_render_edit`、`User#resign!`、`Group#soft_destroy_all!`）は従来どおり破壊的挙動を維持し、`spam_hidden_at` は記録しない。
 
-> メソッド名は実装時に確定する。意図が名前に表れる名称（例: スパム認定による非表示化であることが分かる名前）を選ぶ。`SpamMarkable#mark_spam!`（コメント/カード/タグのスパムマーク用）とは別物のため、名称の衝突・混同を避ける。
+> メソッド名は `hide_as_spam!` とした。`SpamMarkable#mark_spam!`（コメント/カード/タグのスパムマーク用）とは別物。取消機能（2.4）では対となる解除（`is_deleted=false` / `spam_hidden_at` を nil に戻す）を実装する。
 
 ## 採用した実装パターン
 
 | # | 判断ポイント | 採用案 | 関連 ADR |
 |---|------------|--------|---------|
 | 1 | 共用 `soft_destroy!` からのスパム経路の分離方法 | スパム専用の非破壊メソッドを新設し、サービスがそれを呼ぶ（既存 `soft_destroy!` は無変更） | なし（後述） |
+| 2 | スパム認定済みの識別方法 | `projects.spam_hidden_at`（datetime）を追加し、値の有無で識別。認定日時も保持 | なし（後述） |
 
-却下案: (a) 既存 `soft_destroy`（非bang）の流用 — `update`（非bang）で失敗時に例外を出さず、サービスの transaction ロールバックが効かないため不採用。(b) `soft_destroy!` への引数追加 — メソッドが多目的化し、全呼び出し元が引数の意味を理解する必要が生じ凝集が下がるため不採用。
+却下案（#1）: (a) 既存 `soft_destroy`（非bang）の流用 — `update`（非bang）で失敗時に例外を出さず、サービスの transaction ロールバックが効かないため不採用。(b) `soft_destroy!` への引数追加 — メソッドが多目的化し、全呼び出し元が引数の意味を理解する必要が生じ凝集が下がるため不採用。
+
+却下案（#2）: (a) boolean `is_spam` — 最小だが「いつ認定したか」を持てず、2.4 の一覧で並び・監査に使えない。datetime と実装コストはほぼ同じため datetime を採用。(b) projects への status enum 追加 — 既存フラグ設計（`is_deleted` / `is_private`）と不整合で過剰。
 
 ## 結合への影響
 
@@ -61,7 +69,8 @@
 ## 影響範囲
 
 - **スパム認定の挙動変更**: 認定後もプロジェクトの title/name と関連レコードが保持される（一般ユーザー画面では `is_deleted=true` により非表示のまま）。後続の管理画面（要件2.4）が認定済みプロジェクトの内容を参照できる前提が整う。
-- **正規削除経路への影響なし**: `soft_destroy!` を変更しないため、ユーザーによる削除・退会・グループ削除の挙動は不変。
+- **スキーマ追加**: `projects.spam_hidden_at`（nullable datetime, index 付き）を追加する。既存行は nil（過去削除分はスパム由来か判別不可で問題ない）。スパム認定済みは `where.not(spam_hidden_at: nil)` で特定でき、2.4 の取消対象一覧の基盤となる。
+- **正規削除経路への影響なし**: `soft_destroy!` を変更しないため、ユーザーによる削除・退会・グループ削除の挙動は不変。これらは `spam_hidden_at` を記録しないため、スパム認定と区別できる。
 - **管理画面の起点はコード変更不要**: `Admin::ProjectsController#destroy` / `#batch_spam` は `SpamDesignationService.call`（引数・戻り値 `Result` 不変）を呼ぶだけのため修正不要。ただし観測される結果（認定後にプロジェクト内容が保持される）は変わる。既存の管理画面テスト [spec/controllers/admin/projects_controller_spec.rb](../../spec/controllers/admin/projects_controller_spec.rb) が破壊的挙動に依存していないか確認する。
 - **既存テストの修正**:
   - [spec/services/spam_designation_service_spec.rb](../../spec/services/spam_designation_service_spec.rb): 「プロジェクトを論理削除する」検証は `is_deleted` の変化で引き続き成立。失敗系テスト（[:83](../../spec/services/spam_designation_service_spec.rb#L83) の `allow(project2).to receive(:soft_destroy!).and_raise(...)`）は、サービスが呼ぶメソッドが変わるため**新メソッドをスタブするよう修正が必要**。
@@ -70,7 +79,7 @@
 
 ## 関連 ADR
 
-- なし。戦略的判断（非破壊化と引き換えの取消可能性、施策前データの復元不可）は要件定義書 2.3.1 / 2.3.4 に記録済み。本変更の戦術的判断（メソッド分離）は本 ChangeSpec とコードコメントで担保し、ADR は作成しない。
+- なし。戦略的判断（非破壊化と引き換えの取消可能性、施策前データの復元不可）は要件定義書 2.3.1 / 2.3.4 に記録済み。本変更の戦術的判断（メソッド分離・`spam_hidden_at` による認定済み識別）は本 ChangeSpec とコードコメントで担保し、ADR は作成しない。
 
 ## 受け入れ条件
 
@@ -80,6 +89,8 @@
 - [ ] スパム認定時、likes / states / note_cards / usages / project_comments / figures / tags / collaborations が削除されない
 - [ ] スパム認定時、オーナー（Group の場合は全メンバー）が Spammer として登録される
 - [ ] スパム認定後も一般ユーザー画面に該当プロジェクトが表示されない（`is_deleted=true` による除外）
+- [ ] スパム認定時、`spam_hidden_at` に認定日時が記録される
+- [ ] 通常削除（`soft_destroy!`）では `spam_hidden_at` が記録されず、スパム認定と区別できる
 - [ ] 一括認定で一部が失敗しても、失敗分と成功分が正しく報告され、成功分は `is_deleted=true` になる
 
 リグレッション防止（本変更で壊してはならない既存挙動）:
