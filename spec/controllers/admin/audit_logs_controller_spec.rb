@@ -19,13 +19,23 @@ RSpec.describe Admin::AuditLogsController, type: :controller do
 
       it { is_expected.to be_successful }
 
-      it '操作者・IP・操作種別・対象種別を表示する' do
+      it 'スパム認定の操作者・IP・種別・操作・対象を表示する' do
         subject
         expect(response.body).to include('スパム認定')
         expect(response.body).to include('記録')
         expect(response.body).to include('取消')
         expect(response.body).to include('ProjectComment')
         expect(response.body).to include('198.51.100.7')
+      end
+
+      it '異なる subtype を種別ラベル・操作ラベル・対象記述で混在表示する' do
+        target = create(:user, name: 'target-user')
+        create(:audit_log, auditable: build(:admin_authority_audit, action: :grant, target_user: target))
+
+        subject
+        expect(response.body).to include('管理者権限変更')
+        expect(response.body).to include('付与')
+        expect(response.body).to include('target-user')
       end
 
       it '新しい順で並べる' do

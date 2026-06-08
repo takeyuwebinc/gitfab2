@@ -13,8 +13,7 @@
         th IPアドレス
         th 種別
         th 操作
-        th 対象種別
-        th 対象ID
+        th 対象
     tbody
       - @audit_logs.each do |audit_log|
         - detail = audit_log.auditable
@@ -26,9 +25,8 @@
             - else
               | -
           td = audit_log.ip_address.presence || "-"
-          td スパム認定
+          td = detail.audit_type_label
           td = detail.action_label
-          td = detail.target_type
-          td = detail.target_id
+          td = detail.target_description
 
   = paginate(@audit_logs)
