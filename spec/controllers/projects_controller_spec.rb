@@ -121,6 +121,64 @@ describe ProjectsController, type: :controller do
             end
           end
         end
+
+        describe 'usage visibility' do
+          context 'when the usage is spam' do
+            let!(:usage) { create(:usage, project:, status: :spam) }
+
+            it 'does not show the usage' do
+              subject
+              expect(assigns(:usages)).to_not include(usage)
+            end
+          end
+          context 'when the usage is not spam' do
+            let!(:usage) { create(:usage, project:) }
+
+            it 'shows the usage' do
+              subject
+              expect(assigns(:usages)).to include(usage)
+            end
+          end
+        end
+
+        describe 'annotation visibility' do
+          let(:state) { create(:state, :without_annotations, project:) }
+          context 'when the annotation is spam' do
+            let!(:annotation) { create(:annotation, state:, status: :spam) }
+
+            it 'does not show the annotation' do
+              subject
+              expect(assigns(:states).flat_map(&:visible_annotations)).to_not include(annotation)
+            end
+          end
+          context 'when the annotation is not spam' do
+            let!(:annotation) { create(:annotation, state:) }
+
+            it 'shows the annotation' do
+              subject
+              expect(assigns(:states).flat_map(&:visible_annotations)).to include(annotation)
+            end
+          end
+        end
+
+        describe 'tag visibility' do
+          context 'when the tag is spam' do
+            let!(:tag) { create(:tag, project:, name: 'SpamTagSentinel', status: :spam) }
+
+            it 'does not show the tag' do
+              subject
+              expect(response.body).to_not include('SpamTagSentinel')
+            end
+          end
+          context 'when the tag is not spam' do
+            let!(:tag) { create(:tag, project:, name: 'VisibleTagSentinel') }
+
+            it 'shows the tag' do
+              subject
+              expect(response.body).to include('VisibleTagSentinel')
+            end
+          end
+        end
       end
       describe 'GET new' do
         before do
@@ -834,6 +892,26 @@ describe ProjectsController, type: :controller do
     subject { get :slideshow, params: { owner_name: project.owner, project_id: project } }
     let(:project) { FactoryBot.create(:project) }
     it { is_expected.to be_successful }
+
+    describe 'annotation visibility' do
+      let(:state) { create(:state, :without_annotations, project:) }
+      context 'when the annotation is spam' do
+        let!(:annotation) { create(:annotation, state:, status: :spam) }
+
+        it 'excludes the annotation from the slides' do
+          subject
+          expect(assigns(:cards)).to_not include(annotation)
+        end
+      end
+      context 'when the annotation is not spam' do
+        let!(:annotation) { create(:annotation, state:) }
+
+        it 'includes the annotation in the slides' do
+          subject
+          expect(assigns(:cards)).to include(annotation)
+        end
+      end
+    end
   end
 
   describe 'readonly mode restriction' do

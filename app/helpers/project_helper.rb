@@ -2,7 +2,7 @@
 
 module ProjectHelper
   def all_tags
-    Tag.where.not(name: '').group(:name).order(Arel.sql('COUNT(id) DESC')).pluck(:name)
+    Tag.not_spam.where.not(name: '').group(:name).order(Arel.sql('COUNT(id) DESC')).pluck(:name)
   end
 
   def selected_tags

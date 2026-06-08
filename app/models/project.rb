@@ -47,7 +47,9 @@ class Project < ApplicationRecord
   has_many :note_cards, class_name: 'Card::NoteCard', dependent: :destroy
   has_many :states, class_name: 'Card::State', dependent: :destroy
   has_many :tags, dependent: :destroy
+  has_many :visible_tags, -> { not_spam }, class_name: 'Tag'
   has_many :usages, class_name: 'Card::Usage', dependent: :destroy
+  has_many :visible_usages, -> { not_spam }, class_name: 'Card::Usage'
   has_many :project_comments, dependent: :destroy
   has_many :visible_project_comments, -> { not_spam }, class_name: 'ProjectComment'
   has_many :project_access_logs, dependent: :destroy
@@ -189,7 +191,7 @@ class Project < ApplicationRecord
       states.each do |state|
         lines << ActionController::Base.helpers.strip_tags(state.description)
       end
-      tags.each do |t|
+      tags.reject(&:spam?).each do |t|
         lines << t.generate_draft
       end
       lines.join("\n")

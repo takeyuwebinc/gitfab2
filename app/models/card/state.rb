@@ -33,6 +33,9 @@ class Card::State < Card
                         foreign_key: :state_id,
                         dependent: :destroy,
                         inverse_of: :state
+  has_many :visible_annotations, ->{ not_spam.order(:position) },
+                        class_name: 'Card::Annotation',
+                        foreign_key: :state_id
   accepts_nested_attributes_for :annotations
 
   scope :ordered_by_position, -> { order(:position) }

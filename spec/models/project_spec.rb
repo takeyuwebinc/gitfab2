@@ -221,6 +221,23 @@ describe Project do
         tag2
       EOS
     end
+
+    it "excludes spam tags from the draft" do
+      tag1 = project.tags.build(name: 'tag1', user_id: owner.id)
+      tag1.save!
+      spam_tag = project.tags.build(name: 'spamtag', user_id: owner.id, status: :spam)
+      spam_tag.save!
+      project.update_draft!
+      expect(project.draft).to eq <<~EOS.chomp
+        name
+        title
+        description
+        user1
+        http://example.com
+        Tokyo
+        tag1
+      EOS
+    end
   end
 
   describe '#manageable_by?' do
