@@ -58,3 +58,19 @@
     font-family: $common-novelsans-semibold;
   }
 }
+
+#admin-nav {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+
+  .nav-link {
+    padding: 4px 8px;
+  }
+
+  .admin-nav-home {
+    font-family: $common-novelsans-semibold;
+  }
+}
