@@ -6,7 +6,7 @@ RSpec.describe Admin::Users::AdminAuthoritiesController, type: :controller do
   before { sign_in operator }
 
   describe 'POST #create（付与）' do
-    subject { post :create, params: { user_id: target.id } }
+    subject { post :create, params: { user_id: target.to_param } }
 
     let!(:target) { create(:user) }
 
@@ -36,10 +36,20 @@ RSpec.describe Admin::Users::AdminAuthoritiesController, type: :controller do
   end
 
   describe 'DELETE #destroy（剥奪）' do
-    subject { delete :destroy, params: { user_id: target.id } }
+    subject { delete :destroy, params: { user_id: target.to_param } }
 
     context 'with authority' do
       let(:authority) { 'admin' }
+
+      context '対象が存在しない場合' do
+        subject { delete :destroy, params: { user_id: 'no-such-user' } }
+
+        it 'RecordNotFound を発生させず、alert 付きで一覧へリダイレクトする' do
+          expect { subject }.not_to raise_error
+          expect(response).to redirect_to(admin_users_path)
+          expect(flash[:alert]).to be_present
+        end
+      end
 
       context '他に管理者が残る場合' do
         let!(:target) { create(:administrator) }

@@ -17,8 +17,12 @@ class Admin::Users::AdminAuthoritiesController < Admin::ApplicationController
 
   private
 
+  # 一覧の URL は friendly_id の slug を含むため slug で対象を解決する。対象が見つから
+  # ない場合（同時削除・不正な URL）は例外で中断せず、一覧へ戻して理由を表示する。
   def load_user
-    @user = User.find(params[:user_id])
+    @user = User.friendly.find(params[:user_id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to admin_users_path(q: params[:q], page: params[:page]), alert: "対象のユーザーが見つかりません"
   end
 
   def flash_for(action, result)
