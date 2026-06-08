@@ -1,0 +1,32 @@
+#admin-audit-logs-index
+  h2.h2 監査ログ
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  table.table
+    thead
+      tr
+        th 日時
+        th 操作者
+        th 種別
+        th 操作
+        th 対象種別
+        th 対象ID
+    tbody
+      - @audit_logs.each do |audit_log|
+        - detail = audit_log.auditable
+        tr
+          td = l(audit_log.created_at, format: :short)
+          td
+            - if audit_log.operator
+              = link_to audit_log.operator.name, owner_path(audit_log.operator)
+            - else
+              | -
+          td スパム認定
+          td = detail.action_label
+          td = detail.target_type
+          td = detail.target_id
+
+  = paginate(@audit_logs)

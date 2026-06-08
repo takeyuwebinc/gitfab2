@@ -66,6 +66,7 @@ Rails.application.routes.draw do
       end
     end
     resources :spam_detection_logs, only: %i[index]
+    resources :audit_logs, only: %i[index]
     resources :announcements
   end
 
