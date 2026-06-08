@@ -13,8 +13,17 @@ class SpamModerationAudit < ApplicationRecord
 
   ACTION_LABELS = { "marked" => "記録", "unmarked" => "取消" }.freeze
 
+  def audit_type_label
+    "スパム認定"
+  end
+
   # 操作種別の日本語表示。
   def action_label
     ACTION_LABELS.fetch(action)
+  end
+
+  # 対象は種別＋ID で表す。対象実体は非破壊で残るため、必要なら種別＋ID から辿れる。
+  def target_description
+    "#{target_type}##{target_id}"
   end
 end
