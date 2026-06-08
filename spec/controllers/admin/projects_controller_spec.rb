@@ -14,6 +14,26 @@ RSpec.describe Admin::ProjectsController, type: :controller do
       let(:authority) { 'admin' }
 
       it { is_expected.to be_successful }
+
+      context 'when status=spam' do
+        let!(:spam_project) { create(:project).tap(&:hide_as_spam!) }
+        let!(:soft_destroyed_project) { create(:project).tap(&:soft_destroy!) }
+
+        it 'スパム認定済み（spam_hidden_at 有り）のみを一覧する' do
+          get :index, params: { status: 'spam' }
+          expect(assigns(:projects)).to include(spam_project)
+          expect(assigns(:projects)).not_to include(soft_destroyed_project)
+          expect(assigns(:projects)).not_to include(project)
+        end
+
+        it 'スパム認定済みをキーワードで絞り込める' do
+          match = create(:project, title: 'needlekeyword').tap(&:hide_as_spam!)
+          other = create(:project, title: 'haystackword').tap(&:hide_as_spam!)
+          get :index, params: { status: 'spam', q: 'needlekeyword' }
+          expect(assigns(:projects)).to include(match)
+          expect(assigns(:projects)).not_to include(other)
+        end
+      end
     end
 
     context 'without authority' do

@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       collection do
         post :batch_spam
       end
+      resource :spam, only: :destroy, module: :projects
     end
     get 'background', to: 'background#index', as: :background
     put 'background', to: 'background#update'
