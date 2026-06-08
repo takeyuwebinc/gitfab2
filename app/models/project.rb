@@ -35,6 +35,7 @@
 class Project < ApplicationRecord
   include Figurable
   include Notificatable
+  include SpamModerationAuditable
 
   extend FriendlyId
   friendly_id :name, use: %i(slugged scoped), scope: :owner_id
@@ -62,6 +63,8 @@ class Project < ApplicationRecord
   after_initialize -> { self.license ||= 'by' }
 
   after_commit -> { owner.update_projects_count }
+
+  after_save :record_spam_moderation_audit
 
   validates :name, presence: true, name_format: true
   validates :name, uniqueness: { scope: [:owner_id, :owner_type], case_sensitive: false }
@@ -205,6 +208,20 @@ class Project < ApplicationRecord
   end
 
   private
+
+    # spam_hidden_at の遷移（nil→値 = 記録、値→nil = 取消）を監査ログに残す。
+    # スパム認定/取消は SpamDesignationService/...RevocationService のトランザクション
+    # 内で実行されるため、記録も同一トランザクションに含まれ原子性が担保される。
+    def record_spam_moderation_audit
+      return unless saved_change_to_spam_hidden_at?
+
+      before, after = saved_change_to_spam_hidden_at
+      if before.nil? && !after.nil?
+        write_spam_moderation_audit(:marked)
+      elsif !before.nil? && after.nil?
+        write_spam_moderation_audit(:unmarked)
+      end
+    end
 
     def generate_draft
       lines = [name, title, description, owner.generate_draft]

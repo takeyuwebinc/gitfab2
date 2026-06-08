@@ -1,8 +1,12 @@
 module SpamMarkable
   extend ActiveSupport::Concern
 
+  include SpamModerationAuditable
+
   included do
     enum :status, { unconfirmed: 0, approved: 1, spam: 2 }
+
+    after_save :record_spam_moderation_audit
   end
 
   # 承認する
@@ -46,6 +50,22 @@ module SpamMarkable
         author.spam_undetect!
       end
       update!(status: :unconfirmed)
+    end
+  end
+
+  private
+
+  # スパムへの遷移を「記録」、スパムからの遷移を「取消」として監査ログに残す。
+  # spam を含まない遷移（approved→未確認 等）は対象外。状態変更と同一トランザクション
+  # 内で発火するため、記録失敗時は状態変更ごとロールバックする。
+  def record_spam_moderation_audit
+    return unless saved_change_to_status?
+
+    before, after = saved_change_to_status
+    if after == "spam"
+      write_spam_moderation_audit(:marked)
+    elsif before == "spam"
+      write_spam_moderation_audit(:unmarked)
     end
   end
 end
