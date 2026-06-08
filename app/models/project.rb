@@ -168,6 +168,15 @@ class Project < ApplicationRecord
     end
   end
 
+  # スパム認定でプロジェクトを非表示にする。is_deleted=true で非表示化し、
+  # spam_hidden_at に認定日時を記録する。spam_hidden_at の有無により通常削除
+  # （soft_destroy! による匿名化・関連レコード削除）と区別でき、認定の取消・
+  # 復元の対象を特定できる。title/name・関連レコードは保持し、復元可能性のため
+  # 破壊的な soft_destroy! とは分けて非破壊で行う。失敗時は例外を送出する。
+  def hide_as_spam!
+    update!(is_deleted: true, spam_hidden_at: Time.current)
+  end
+
   def update_draft!
     update!(draft: generate_draft)
   end

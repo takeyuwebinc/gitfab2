@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_08_100100) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_100101) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -243,10 +243,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_08_100100) do
     t.integer "usages_count", default: 0, null: false
     t.integer "note_cards_count", default: 0, null: false
     t.integer "project_access_logs_count", default: 0, null: false
+    t.datetime "spam_hidden_at"
     t.index ["is_private", "is_deleted"], name: "index_projects_on_is_private_and_is_deleted"
     t.index ["original_id"], name: "index_projects_original_id"
     t.index ["owner_type", "owner_id"], name: "index_projects_owner"
     t.index ["slug", "owner_type", "owner_id"], name: "index_projects_slug_owner", unique: true
+    t.index ["spam_hidden_at"], name: "index_projects_on_spam_hidden_at"
     t.index ["updated_at"], name: "index_projects_updated_at"
   end
 

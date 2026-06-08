@@ -35,7 +35,7 @@ class SpamDesignationService
   def designate(project)
     ActiveRecord::Base.transaction do
       register_owner_as_spammer(project)
-      project.soft_destroy!
+      project.hide_as_spam!
     end
     true
   rescue => e
