@@ -8,6 +8,7 @@
   nav.nav.flex-row
     = link_to "all", admin_usages_path, class: 'nav-link'
     = link_to "unconfirmed", admin_usages_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "approved", admin_usages_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_usages_path(status: "spam"), class: 'nav-link'
 
   .mb-3
@@ -41,8 +42,10 @@
           = "#{usage.project.owner.name}/#{usage.project.title}"
         td.management
           - if usage.unconfirmed?
-            = button_to "スパムにする", admin_usage_spam_path(usage, status: @status), method: :post
+            = button_to "承認", admin_usage_approval_path(usage, status: @status), method: :post
+          - if usage.approved?
+            = button_to "未承認に戻す", admin_usage_approval_path(usage, status: @status), method: :delete
           - if usage.spam?
-            = button_to "未確認に戻す", admin_usage_spam_path(usage, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_usage_spam_path(usage, status: @status), method: :delete
 
   = paginate(@usages)

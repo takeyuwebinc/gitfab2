@@ -8,6 +8,7 @@
   nav.nav.flex-row
     = link_to "all", admin_tags_path, class: 'nav-link'
     = link_to "unconfirmed", admin_tags_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "approved", admin_tags_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_tags_path(status: "spam"), class: 'nav-link'
 
   .mb-3
@@ -42,8 +43,10 @@
           = "#{tag.project.owner.name}/#{tag.project.title}"
         td.management
           - if tag.unconfirmed?
-            = button_to "スパムにする", admin_tag_spam_path(tag, status: @status), method: :post
+            = button_to "承認", admin_tag_approval_path(tag, status: @status), method: :post
+          - if tag.approved?
+            = button_to "未承認に戻す", admin_tag_approval_path(tag, status: @status), method: :delete
           - if tag.spam?
-            = button_to "未確認に戻す", admin_tag_spam_path(tag, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_tag_spam_path(tag, status: @status), method: :delete
 
   = paginate(@tags)

@@ -6,15 +6,17 @@ RSpec.describe Admin::AnnotationsController, type: :controller do
   before { sign_in user }
 
   describe "GET #index" do
-    let!(:annotation) { create(:annotation) }
-
-    it "一覧を表示すること" do
+    it "全ステータスの行を表示できること" do
+      unconfirmed = create(:annotation, status: :unconfirmed)
+      approved = create(:annotation, status: :approved)
+      spam = create(:annotation, status: :spam)
       get :index
       expect(response).to be_successful
-      expect(assigns(:annotations)).to include(annotation)
+      expect(assigns(:annotations)).to include(unconfirmed, approved, spam)
     end
 
     context "status で絞り込むとき" do
+      let!(:annotation) { create(:annotation) }
       let!(:spam_annotation) { create(:annotation, status: :spam) }
 
       it "指定した status のレコードのみ返すこと" do

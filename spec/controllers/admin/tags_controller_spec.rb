@@ -6,15 +6,17 @@ RSpec.describe Admin::TagsController, type: :controller do
   before { sign_in user }
 
   describe "GET #index" do
-    let!(:tag) { create(:tag) }
-
-    it "一覧を表示すること" do
+    it "全ステータスの行を表示できること" do
+      unconfirmed = create(:tag, status: :unconfirmed)
+      approved = create(:tag, status: :approved)
+      spam = create(:tag, status: :spam)
       get :index
       expect(response).to be_successful
-      expect(assigns(:tags)).to include(tag)
+      expect(assigns(:tags)).to include(unconfirmed, approved, spam)
     end
 
     context "status で絞り込むとき" do
+      let!(:tag) { create(:tag) }
       let!(:spam_tag) { create(:tag, status: :spam) }
 
       it "指定した status のレコードのみ返すこと" do
