@@ -146,6 +146,27 @@ describe User do
     end
   end
 
+  describe '#last_system_admin?' do
+    subject { target.last_system_admin? }
+
+    context '対象が唯一のシステム管理者の場合' do
+      let!(:target) { FactoryBot.create(:administrator) }
+      it { is_expected.to be true }
+    end
+
+    context '他にもシステム管理者が存在する場合' do
+      let!(:target) { FactoryBot.create(:administrator) }
+      let!(:other_admin) { FactoryBot.create(:administrator) }
+      it { is_expected.to be false }
+    end
+
+    context '対象がシステム管理者でない場合' do
+      let!(:admin) { FactoryBot.create(:administrator) }
+      let!(:target) { FactoryBot.create(:user) }
+      it { is_expected.to be false }
+    end
+  end
+
   describe '#is_owner_of?(project)' do
     let(:someone_else) { FactoryBot.create :user }
     let!(:project_owned) { FactoryBot.create :project, owner: user }

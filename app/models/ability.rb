@@ -64,6 +64,18 @@ class Ability
     can :destroy, Tag do |_tag|
       user.persisted?
     end
+
+    # 管理者権限の付与・剥奪の可否。判定は可否述語へ委譲する。
+    # 自己剥奪は can :manage, User, id: user.id（自分自身の管理）が剥奪を含むため、
+    # cannot で明示的に打ち消す（これがないと自己剥奪が許可されてしまう）。
+    admin_authority = AdminAuthorityChangeService.new(operator: user)
+    can :grant_admin_authority, User do |target|
+      admin_authority.can_grant?(target)
+    end
+    can :revoke_admin_authority, User do |target|
+      admin_authority.can_revoke?(target)
+    end
+    cannot :revoke_admin_authority, User, id: user.id
   end
 
   private

@@ -6,11 +6,13 @@ class Admin::Users::AdminAuthoritiesController < Admin::ApplicationController
   before_action :load_user
 
   def create
+    authorize! :grant_admin_authority, @user
     result = AdminAuthorityChangeService.grant(target_user: @user, operator: current_user)
     redirect_to admin_users_path(q: params[:q], page: params[:page]), **flash_for(:grant, result)
   end
 
   def destroy
+    authorize! :revoke_admin_authority, @user
     result = AdminAuthorityChangeService.revoke(target_user: @user, operator: current_user)
     redirect_to admin_users_path(q: params[:q], page: params[:page]), **flash_for(:revoke, result)
   end

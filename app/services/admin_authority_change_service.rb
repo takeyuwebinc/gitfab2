@@ -62,6 +62,21 @@ class AdminAuthorityChangeService
     end
   end
 
+  # 付与が可能か（事前判定用）。操作者がシステム管理者であること。
+  # 認可（Ability・コントローラ）が参照する読み取り述語。状態は変更しない。
+  def can_grant?(_target_user)
+    @operator.is_system_admin?
+  end
+
+  # 剥奪が可能か（事前判定用）。操作者がシステム管理者であり、対象が操作者自身でなく、
+  # 対象が最後のシステム管理者でないこと。最後の1名のレース判定は revoke の同一
+  # トランザクション内ロックが最終防御として別途担うため、本述語は事前判定に用いる。
+  def can_revoke?(target_user)
+    @operator.is_system_admin? &&
+      target_user.id != @operator.id &&
+      !target_user.last_system_admin?
+  end
+
   private
 
   def write_audit(action, target_user)

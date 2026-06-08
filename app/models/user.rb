@@ -77,6 +77,13 @@ class User < ApplicationRecord
     authority == 'admin'
   end
 
+  # 自身がシステム管理者で、かつ他にシステム管理者が存在しない（＝最後の1名）かを返す。
+  # 管理者数の問い合わせは対象に依存しない総数 COUNT のため、一覧の各行で評価しても
+  # 同一 SQL となり、リクエスト単位の AR クエリキャッシュで1回に集約される。
+  def last_system_admin?
+    is_system_admin? && User.where(authority: 'admin').count <= 1
+  end
+
   def is_owner_of?(project)
     self == project.owner
   end
