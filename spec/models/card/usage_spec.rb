@@ -63,7 +63,35 @@ describe Card::Usage do
 
     context 'status が spam のとき' do
       let(:status) { 'spam' }
+
       it { expect { subject }.to change { usage.reload.status }.from('spam').to('unconfirmed') }
+
+      context '作成者を特定できるとき' do
+        let(:author) { FactoryBot.create(:user) }
+        before do
+          FactoryBot.create(:contribution, card: usage, contributor: author, created_at: 1.hour.ago)
+          FactoryBot.create(:spammer, user: author)
+        end
+
+        it '作成者のスパム投稿者登録を解除すること' do
+          expect { subject }.to change(Spammer, :count).by(-1)
+        end
+
+        it '作成者が spammer でなくなること' do
+          subject
+          expect(author.reload).not_to be_spammer
+        end
+      end
+
+      context '作成者を特定できないとき（contribution 無し）' do
+        it 'エラーにならず status のみ unconfirmed に戻すこと' do
+          expect { subject }.to change { usage.reload.status }.from('spam').to('unconfirmed')
+        end
+
+        it 'スパム投稿者登録を変更しないこと' do
+          expect { subject }.not_to change(Spammer, :count)
+        end
+      end
     end
 
     context 'status が approved のとき' do

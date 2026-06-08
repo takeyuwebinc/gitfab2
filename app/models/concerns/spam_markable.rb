@@ -35,10 +35,17 @@ module SpamMarkable
     end
   end
 
-  # スパム記録を未確認に戻す
+  # スパム記録を未確認に戻す。mark_spam! の対操作として、投稿者の Spammer 登録も
+  # 解除する。spam_undetect! は登録が無くても何もしない（冪等）ため、他にスパム投稿が
+  # 残っていても無条件に解除される。spam_author を特定できない場合は status の変更のみ行う。
   def unmark_spam!
     return if unconfirmed?
     raise "Can't unmark spam approved comment" if approved?
-    update!(status: :unconfirmed)
+    with_lock do
+      if (author = spam_author)
+        author.spam_undetect!
+      end
+      update!(status: :unconfirmed)
+    end
   end
 end
