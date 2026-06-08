@@ -3,12 +3,13 @@
 #
 # Table name: tags
 #
-#  id         :integer          not null, primary key
-#  name       :string(255)
-#  created_at :datetime
-#  updated_at :datetime
-#  project_id :integer
-#  user_id    :integer
+#  id                                                  :integer          not null, primary key
+#  name                                                :string(255)
+#  status(確認ステータス 0:未確認 1:承認済み 2:スパム) :integer          default("unconfirmed"), not null
+#  created_at                                          :datetime
+#  updated_at                                          :datetime
+#  project_id                                          :integer
+#  user_id                                             :integer
 #
 # Indexes
 #

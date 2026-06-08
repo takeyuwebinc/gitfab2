@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_23_090055) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_100000) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -68,6 +68,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_23_090055) do
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.integer "comments_count", default: 0, null: false
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.index ["project_id"], name: "index_cards_project_id"
     t.index ["state_id"], name: "index_cards_on_state_id"
   end
@@ -290,6 +291,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_23_090055) do
     t.string "name"
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
+    t.integer "status", default: 0, null: false, comment: "確認ステータス 0:未確認 1:承認済み 2:スパム"
     t.index ["project_id"], name: "fk_rails_2f90b9163e"
     t.index ["user_id"], name: "index_tags_user_id"
   end
