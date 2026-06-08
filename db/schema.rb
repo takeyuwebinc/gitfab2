@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_08_110002) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_120000) do
+  create_table "admin_authority_audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "管理者権限変更の監査ログ（種別別の詳細）", force: :cascade do |t|
+    t.integer "action", null: false, comment: "操作種別（0: 付与, 1: 剥奪）"
+    t.bigint "target_user_id", null: false, comment: "対象ユーザー（緩い参照、FK制約なし）"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_user_id"], name: "index_admin_authority_audits_on_target_user_id"
+  end
+
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"

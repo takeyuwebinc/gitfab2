@@ -67,6 +67,9 @@ Rails.application.routes.draw do
     end
     resources :spam_detection_logs, only: %i[index]
     resources :audit_logs, only: %i[index]
+    resources :users, only: %i[index] do
+      resource :admin_authority, only: %i[create destroy], module: :users
+    end
     resources :announcements
   end
 

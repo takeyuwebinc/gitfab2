@@ -8,7 +8,7 @@
 class AuditLog < ApplicationRecord
   belongs_to :operator, class_name: "User"
 
-  delegated_type :auditable, types: %w[SpamModerationAudit], dependent: :destroy
+  delegated_type :auditable, types: %w[SpamModerationAudit AdminAuthorityAudit], dependent: :destroy
 
   scope :recent, -> { order(created_at: :desc) }
 end
