@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_08_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_100100) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
