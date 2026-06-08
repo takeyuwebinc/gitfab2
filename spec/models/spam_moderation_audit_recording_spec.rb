@@ -8,7 +8,10 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
     let!(:comment) { create(:project_comment) }
 
     context '操作者が存在する場合' do
-      before { Current.admin = admin }
+      before do
+      Current.admin = admin
+      Current.ip_address = '198.51.100.7'
+    end
 
       it 'mark_spam! で記録(marked)の監査ログを1組残す' do
         expect { comment.mark_spam! }
@@ -19,6 +22,7 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
         expect(audit.action).to eq 'marked'
         expect(audit.target).to eq comment
         expect(audit.audit_log.operator).to eq admin
+        expect(audit.audit_log.ip_address).to eq '198.51.100.7'
       end
 
       it 'unmark_spam! で取消(unmarked)の監査ログを残す' do
@@ -47,7 +51,10 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
   end
 
   describe '一括スパム記録' do
-    before { Current.admin = admin }
+    before do
+      Current.admin = admin
+      Current.ip_address = '198.51.100.7'
+    end
 
     it '対象ごとに1組ずつ記録する' do
       comments = create_list(:project_comment, 3)
@@ -61,7 +68,10 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
   describe '記録失敗時の原子性' do
     let!(:comment) { create(:project_comment) }
 
-    before { Current.admin = admin }
+    before do
+      Current.admin = admin
+      Current.ip_address = '198.51.100.7'
+    end
 
     it '監査ログのinsertが失敗すると状態変更もロールバックする' do
       allow(AuditLog).to receive(:create!).and_raise('audit insert failed')
@@ -74,7 +84,10 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
   describe 'Project#hide_as_spam! / #unhide_as_spam!' do
     let!(:project) { create(:project) }
 
-    before { Current.admin = admin }
+    before do
+      Current.admin = admin
+      Current.ip_address = '198.51.100.7'
+    end
 
     it 'hide_as_spam! で記録(marked)を残す' do
       expect { project.hide_as_spam! }.to change(AuditLog, :count).by(1)
@@ -83,6 +96,7 @@ RSpec.describe 'スパム認定の監査ログ記録', type: :model do
       expect(audit.action).to eq 'marked'
       expect(audit.target).to eq project
       expect(audit.audit_log.operator).to eq admin
+      expect(audit.audit_log.ip_address).to eq '198.51.100.7'
     end
 
     it 'unhide_as_spam! で取消(unmarked)を残す' do

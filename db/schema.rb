@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_08_110001) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_08_110002) do
   create_table "announcements", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", comment: "お知らせ", force: :cascade do |t|
     t.string "title_ja", null: false, comment: "見出し（日本語）"
     t.string "title_en", null: false, comment: "見出し（英語）"
@@ -43,6 +43,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_08_110001) do
     t.bigint "auditable_id", null: false, comment: "監査種別への委譲参照（delegated_type）"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "ip_address", comment: "操作者のリクエスト元IPアドレス"
     t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable"
     t.index ["operator_id"], name: "index_audit_logs_on_operator_id"
   end

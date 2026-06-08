@@ -19,12 +19,13 @@ RSpec.describe Admin::AuditLogsController, type: :controller do
 
       it { is_expected.to be_successful }
 
-      it '操作者・操作種別・対象種別を表示する' do
+      it '操作者・IP・操作種別・対象種別を表示する' do
         subject
         expect(response.body).to include('スパム認定')
         expect(response.body).to include('記録')
         expect(response.body).to include('取消')
         expect(response.body).to include('ProjectComment')
+        expect(response.body).to include('198.51.100.7')
       end
 
       it '新しい順で並べる' do

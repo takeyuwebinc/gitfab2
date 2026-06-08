@@ -15,6 +15,7 @@ module SpamModerationAuditable
 
     AuditLog.create!(
       operator: operator,
+      ip_address: Current.ip_address,
       auditable: SpamModerationAudit.new(action: action, target: self)
     )
   end

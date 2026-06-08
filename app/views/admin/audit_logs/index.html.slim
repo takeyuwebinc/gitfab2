@@ -10,6 +10,7 @@
       tr
         th 日時
         th 操作者
+        th IPアドレス
         th 種別
         th 操作
         th 対象種別
@@ -24,6 +25,7 @@
               = link_to audit_log.operator.name, owner_path(audit_log.operator)
             - else
               | -
+          td = audit_log.ip_address.presence || "-"
           td スパム認定
           td = detail.action_label
           td = detail.target_type
