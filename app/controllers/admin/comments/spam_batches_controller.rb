@@ -1,9 +1,6 @@
 class Admin::Comments::SpamBatchesController < Admin::Comments::BaseController
   def create
-    comment_class.unconfirmed.where("created_at <= ?", Time.zone.parse(params[:before])).order(id: :asc).find_each do |comment|
-      comment.mark_spam!
-    end
-    redirect_to public_send(:"admin_#{comment_class.name.underscore.pluralize}_path", status: params[:status]), notice: "コメントをスパムとして記録しました"
+    markable_class.unconfirmed.where("created_at <= ?", Time.zone.parse(params[:before])).order(id: :asc).find_each(&:mark_spam!)
+    redirect_to markable_index_path(status: params[:status]), notice: "スパムとして記録しました"
   end
 end
- 

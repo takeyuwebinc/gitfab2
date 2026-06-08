@@ -1,0 +1,48 @@
+#admin-usages-index
+  h2.h2 Review Usages
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  nav.nav.flex-row
+    = link_to "all", admin_usages_path, class: 'nav-link'
+    = link_to "unconfirmed", admin_usages_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "spam", admin_usages_path(status: "spam"), class: 'nav-link'
+
+  .mb-3
+    - if @usages.length.positive?
+      = button_to "すべての未確認を一括スパムにする", admin_usages_spam_batch_path(before: @usages.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+    - else
+      = button_to "すべての未確認を一括スパムにする", "#", disabled: true
+
+  table.table.usages-table
+    thead
+      tr
+        th.status
+          | ステータス
+        th.body
+          | 内容
+        th.project-name
+          | プロジェクト名
+        th.management
+          | 操作
+    tbody
+    - @usages.each do |usage|
+      tr.card
+        td.status
+          = usage.status
+        td.body
+          = usage.title
+          - if usage.description.present?
+            p.text-muted.small
+              = truncate(usage.description.to_s, length: 80)
+        td.project-name
+          = "#{usage.project.owner.name}/#{usage.project.title}"
+        td.management
+          - if usage.unconfirmed?
+            = button_to "スパムにする", admin_usage_spam_path(usage, status: @status), method: :post
+          - if usage.spam?
+            = button_to "未確認に戻す", admin_usage_spam_path(usage, status: @status), method: :delete
+
+  = paginate(@usages)

@@ -37,6 +37,24 @@ Rails.application.routes.draw do
     namespace :card_comments do
       resource :spam_batch, only: :create
     end
+    resources :usages, only: :index do
+      resource :spam, only: [:create, :destroy], module: :usages
+    end
+    namespace :usages do
+      resource :spam_batch, only: :create
+    end
+    resources :annotations, only: :index do
+      resource :spam, only: [:create, :destroy], module: :annotations
+    end
+    namespace :annotations do
+      resource :spam_batch, only: :create
+    end
+    resources :tags, only: :index do
+      resource :spam, only: [:create, :destroy], module: :tags
+    end
+    namespace :tags do
+      resource :spam_batch, only: :create
+    end
     resources :spammers, only: %i[index destroy]
     resources :spam_keywords do
       member do

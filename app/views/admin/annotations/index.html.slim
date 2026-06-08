@@ -1,0 +1,48 @@
+#admin-annotations-index
+  h2.h2 Review Annotations
+
+  - flash.each do |key, message|
+    div class="alert alert-#{key}"
+      = message
+
+  nav.nav.flex-row
+    = link_to "all", admin_annotations_path, class: 'nav-link'
+    = link_to "unconfirmed", admin_annotations_path(status: "unconfirmed"), class: 'nav-link'
+    = link_to "spam", admin_annotations_path(status: "spam"), class: 'nav-link'
+
+  .mb-3
+    - if @annotations.length.positive?
+      = button_to "すべての未確認を一括スパムにする", admin_annotations_spam_batch_path(before: @annotations.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+    - else
+      = button_to "すべての未確認を一括スパムにする", "#", disabled: true
+
+  table.table.annotations-table
+    thead
+      tr
+        th.status
+          | ステータス
+        th.body
+          | 内容
+        th.project-name
+          | プロジェクト名
+        th.management
+          | 操作
+    tbody
+    - @annotations.each do |annotation|
+      tr.card
+        td.status
+          = annotation.status
+        td.body
+          = annotation.title
+          - if annotation.description.present?
+            p.text-muted.small
+              = truncate(annotation.description.to_s, length: 80)
+        td.project-name
+          = "#{annotation.project.owner.name}/#{annotation.project.title}"
+        td.management
+          - if annotation.unconfirmed?
+            = button_to "スパムにする", admin_annotation_spam_path(annotation, status: @status), method: :post
+          - if annotation.spam?
+            = button_to "未確認に戻す", admin_annotation_spam_path(annotation, status: @status), method: :delete
+
+  = paginate(@annotations)
