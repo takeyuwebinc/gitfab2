@@ -3,6 +3,16 @@ module SpammerRestriction
 
   private
 
+  # 投稿者がスパム投稿者の場合、レコードをスパムとして記録する。
+  # 保存自体は許可するが、not_spam 絞り込みにより一般ユーザーには公開されない。
+  # 投稿者本人には通常どおり応答を返すため、本人は非公開化に気付かない。
+  # コメントの build_from（status = :spam if user.spammer?）と同じ挙動を、
+  # 関連経由で生成するレコード（Usage / Annotation / Tag）へ適用する。
+  # @param record [#status=] status を持つ SpamMarkable レコード
+  def flag_as_spam_if_spammer(record)
+    record.status = :spam if current_user&.spammer?
+  end
+
   # スパム投稿者かどうかを判定し、サイレント拒否すべきかを返す
   # @param action_name [String] 実行しようとしたアクション名（ログ用）
   # @param content_type [String] コンテンツ種別（スパム検出ログ用）

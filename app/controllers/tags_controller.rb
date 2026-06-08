@@ -1,4 +1,5 @@
 class TagsController < ApplicationController
+  include SpammerRestriction
   include ReadonlyModeRestriction
 
   before_action :restrict_readonly_mode
@@ -6,6 +7,7 @@ class TagsController < ApplicationController
   def create
     project = Project.find_with(params[:owner_name], params[:project_id])
     @tag = project.tags.build(tag_params)
+    flag_as_spam_if_spammer(@tag)
     if can?(:create, @tag) && @tag.save
       project.update_draft!
       render :create

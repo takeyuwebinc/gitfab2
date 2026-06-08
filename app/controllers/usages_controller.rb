@@ -1,5 +1,6 @@
 class UsagesController < ApplicationController
   include SpamKeywordDetection
+  include SpammerRestriction
   include ReadonlyModeRestriction
 
   before_action :load_owner
@@ -22,6 +23,8 @@ class UsagesController < ApplicationController
       render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
       return
     end
+
+    flag_as_spam_if_spammer(@usage)
 
     if @usage.save
       @project.touch

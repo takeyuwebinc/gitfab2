@@ -25,6 +25,20 @@ describe TagsController, type: :controller do
       subject
       expect(project.reload.draft).to include(tag_name)
     end
+
+    context 'when the user is a spammer' do
+      before { create(:spammer, user: user) }
+
+      it 'creates the tag as spam' do
+        subject
+        expect(project.reload.tags.last).to be_spam
+      end
+
+      it 'excludes the spam tag from the draft' do
+        subject
+        expect(project.reload.draft).not_to include(tag_name)
+      end
+    end
   end
 
   describe 'DELETE destroy' do
