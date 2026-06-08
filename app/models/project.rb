@@ -73,6 +73,9 @@ class Project < ApplicationRecord
   scope :noted, -> { joins(:note_cards).where.not(cards: { id: nil }) }
   scope :ordered_by_owner, -> { order(:owner_id) }
   scope :published, -> { active.where(is_private: false) }
+  # スパム認定により非表示化されたプロジェクト。spam_hidden_at の有無で
+  # 通常削除（soft_destroy!）と区別する。
+  scope :spam_hidden, -> { where.not(spam_hidden_at: nil) }
 
   # draft全文検索
   scope :search_draft, -> (text) do
@@ -175,6 +178,14 @@ class Project < ApplicationRecord
   # 破壊的な soft_destroy! とは分けて非破壊で行う。失敗時は例外を送出する。
   def hide_as_spam!
     update!(is_deleted: true, spam_hidden_at: Time.current)
+  end
+
+  # スパム認定を取り消し、プロジェクトを再表示する。is_deleted=false に戻し、
+  # スパム認定マーカー spam_hidden_at を nil に戻す。hide_as_spam! の対であり、
+  # 非破壊認定により保持された title/name・関連レコードはそのまま再表示される。
+  # 失敗時は例外を送出する。
+  def unhide_as_spam!
+    update!(is_deleted: false, spam_hidden_at: nil)
   end
 
   def update_draft!

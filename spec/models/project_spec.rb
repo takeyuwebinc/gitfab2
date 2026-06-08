@@ -350,4 +350,35 @@ describe Project do
       expect(project.collaborations.count).to eq 2
     end
   end
+
+  describe '#unhide_as_spam!' do
+    subject { project.unhide_as_spam! }
+
+    let!(:project) { FactoryBot.create([:user_project, :group_project].sample) }
+
+    before { project.hide_as_spam! }
+
+    it 'is_deleted を false に戻す' do
+      expect{ subject }.to change{ project.reload.is_deleted }.from(true).to(false)
+    end
+
+    it 'spam_hidden_at を nil に戻す' do
+      expect{ subject }.to change{ project.reload.spam_hidden_at }.to(nil)
+    end
+  end
+
+  describe '.spam_hidden' do
+    let!(:spam_project) { FactoryBot.create(:user_project).tap(&:hide_as_spam!) }
+    let!(:active_project) { FactoryBot.create(:user_project) }
+    let!(:soft_destroyed_project) { FactoryBot.create(:user_project).tap(&:soft_destroy!) }
+
+    it 'spam_hidden_at 有りのプロジェクトのみを返す' do
+      expect(described_class.spam_hidden).to include(spam_project)
+      expect(described_class.spam_hidden).not_to include(active_project)
+    end
+
+    it '通常削除（soft_destroy!）のプロジェクトは含まない' do
+      expect(described_class.spam_hidden).not_to include(soft_destroyed_project)
+    end
+  end
 end

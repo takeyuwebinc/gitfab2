@@ -177,6 +177,11 @@ class User < ApplicationRecord
     create_spammer!(detected_at: Time.current)
   end
 
+  # スパム認定の取消などで Spammer 登録を解除する。登録が無ければ何もしない（冪等）。
+  def spam_undetect!
+    spammer&.destroy!
+  end
+
   private
 
     def should_generate_new_friendly_id?
