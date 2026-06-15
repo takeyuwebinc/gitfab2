@@ -12,9 +12,10 @@
     = link_to "spam", admin_annotations_path(status: "spam"), class: 'nav-link'
 
   - if @project
-    .mb-2.alert.alert-info
-      | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
-      = link_to "絞り込み解除", admin_annotations_path(status: @status), class: 'ms-2'
+    .mb-2.alert.alert-info.d-flex.align-items-center.justify-content-between
+      span
+        | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
+      = link_to "絞り込みを解除", admin_annotations_path(status: @status), class: 'btn btn-sm btn-outline-secondary'
 
   .mb-3
     - if @annotations.length.positive?
