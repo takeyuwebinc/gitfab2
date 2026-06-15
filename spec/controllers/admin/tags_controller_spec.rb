@@ -26,6 +26,16 @@ RSpec.describe Admin::TagsController, type: :controller do
       end
     end
 
+    context "プロジェクト名リンク" do
+      let(:project) { create(:user_project) }
+      let!(:tag_in_project) { create(:tag, project: project, status: :unconfirmed) }
+
+      it "プロジェクト名リンクに project_id が含まれ絞り込みに使えること" do
+        get :index, params: { status: "unconfirmed" }
+        expect(response.body).to include("project_id=#{project.id}")
+      end
+    end
+
     context "without authority" do
       let(:user) { create(:user) }
 
