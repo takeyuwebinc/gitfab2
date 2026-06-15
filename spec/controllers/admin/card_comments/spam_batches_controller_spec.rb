@@ -81,6 +81,31 @@ RSpec.describe Admin::CardComments::SpamBatchesController, type: :controller do
       end
     end
 
+    context "コメントが Annotation カード（project_id 列 nil・state 経由）に付くとき" do
+      let!(:anno_in) do
+        create(:card_comment,
+               card: create(:annotation, state: create(:state, :without_annotations, project: project)),
+               status: :unconfirmed, created_at: time - 1.second)
+      end
+      let!(:anno_out) do
+        create(:card_comment,
+               card: create(:annotation, state: create(:state, :without_annotations, project: other_project)),
+               status: :unconfirmed, created_at: time - 1.second)
+      end
+
+      subject { post :create, params: { before: time.to_param, project_id: project.id } }
+
+      it "当該プロジェクトの Annotation カード上の未確認もスパム化すること" do
+        subject
+        expect(anno_in.reload).to be_spam
+      end
+
+      it "別プロジェクトの Annotation カード上の未確認は一切スパム化しないこと" do
+        subject
+        expect(anno_out.reload).to be_unconfirmed
+      end
+    end
+
     context "project_id を指定しないとき（フィルタが効いている対照）" do
       subject { post :create, params: { before: time.to_param } }
 
