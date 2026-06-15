@@ -59,8 +59,8 @@
   }
 
   // テキストリンクを破線下線で明示し、クリック可能だと分かりやすくする。
-  // ボタン（.btn）とナビゲーション（.nav-link）は対象外。
-  a:not(.btn):not(.nav-link) {
+  // ボタン（.btn）のみ対象外。ナビゲーション（.nav-link）にも下線を付ける。
+  a:not(.btn) {
     text-decoration: underline dashed;
     text-underline-offset: 2px;
   }
