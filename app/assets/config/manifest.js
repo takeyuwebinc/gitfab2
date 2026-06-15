@@ -9,6 +9,7 @@
 //= link dashboard.css
 //= link admin.js
 //= link admin.css
+//= link turbo.js
 //= link project.css
 //= link project.js
 //= link user.js
