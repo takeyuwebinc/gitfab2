@@ -60,6 +60,27 @@ RSpec.describe Admin::UsersController, type: :controller do
           expect(assigns(:users)).not_to include(alice)
         end
       end
+
+      context '管理者権限で絞り込んだ場合' do
+        let(:params) { { admin_only: '1' } }
+
+        it '管理者のみ返す' do
+          subject
+          expect(assigns(:users)).to include(alice)
+          expect(assigns(:users)).not_to include(bob)
+        end
+      end
+
+      context 'キーワードと管理者権限を併用した場合' do
+        let!(:carol) { create(:user, name: 'alice2', email: 'alice2@example.com') }
+        let(:params) { { q: 'alice', admin_only: '1' } }
+
+        it '両条件（AND）を満たすユーザーのみ返す' do
+          subject
+          expect(assigns(:users)).to include(alice)
+          expect(assigns(:users)).not_to include(carol)
+        end
+      end
     end
 
     context 'without authority' do

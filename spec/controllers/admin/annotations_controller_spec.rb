@@ -26,6 +26,18 @@ RSpec.describe Admin::AnnotationsController, type: :controller do
       end
     end
 
+    # Annotation は project_id 列を持たず、所属プロジェクトは state 経由で決まる。
+    context "プロジェクト名リンク（project_id 列 nil・state 経由）" do
+      let(:project) { create(:user_project) }
+      let!(:annotation_in_project) { create(:annotation, state: create(:state, :without_annotations, project: project), status: :unconfirmed) }
+
+      it "project_id 列が nil でもリンクに project_id が含まれ絞り込みに使えること" do
+        expect(annotation_in_project.project_id).to be_nil
+        get :index, params: { status: "unconfirmed" }
+        expect(response.body).to include("project_id=#{project.id}")
+      end
+    end
+
     context "without authority" do
       let(:user) { create(:user) }
 

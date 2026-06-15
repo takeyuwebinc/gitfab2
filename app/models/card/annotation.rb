@@ -31,6 +31,8 @@ class Card::Annotation < Card
   acts_as_list scope: :state
 
   scope :ordered_by_position, -> { order(:position) }
+  # Annotation は project_id 列を持たず、所属プロジェクトは state 経由で決まる。
+  scope :for_project, ->(project_id) { where(state_id: Card::State.where(project_id: project_id).select(:id)) }
 
   # 作成者は contributions のうち最古のレコードの contributor。
   # contribution が無いカードでは特定できないため nil を返す。

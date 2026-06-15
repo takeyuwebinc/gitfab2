@@ -26,6 +26,16 @@ class CardComment < ApplicationRecord
   belongs_to :card, counter_cache: :comments_count
   belongs_to :user
 
+  # コメントが付くカードの所属プロジェクトで絞り込む。カードの所属プロジェクトは
+  # project_id 列で直接持つ場合（NoteCard 等）と、project_id 列を持たず state 経由で
+  # 決まる場合（Annotation）がある。両経路を網羅し、表示・リンクの card.project と
+  # 一致させる。
+  scope :for_project, ->(project_id) {
+    cards_in_project = Card.where(project_id: project_id)
+                          .or(Card.where(state_id: Card::State.where(project_id: project_id).select(:id)))
+    where(card_id: cards_in_project.select(:id))
+  }
+
   validates :body, presence: true
 
   # コメントオブジェクトを作成する

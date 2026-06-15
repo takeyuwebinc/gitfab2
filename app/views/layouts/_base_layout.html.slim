@@ -8,6 +8,7 @@ html
     = content_for(:javascript) || javascript_include_tag("application")
     = content_for(:ogp)
     = csrf_meta_tags
+    = content_for(:head)
     link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"
   body
     = render "components/analytics"

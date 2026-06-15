@@ -15,6 +15,16 @@ RSpec.describe Admin::ProjectsController, type: :controller do
 
       it { is_expected.to be_successful }
 
+      context 'まとめてスパム認定フォームのフィルタ・ページ引き継ぎ' do
+        render_views
+
+        it '現在の q と page を hidden field として出力する' do
+          get :index, params: { q: 'keyword', page: '3' }
+          expect(response.body).to include('name="q"').and include('value="keyword"')
+          expect(response.body).to include('name="page"').and include('value="3"')
+        end
+      end
+
       context 'when status=spam' do
         let!(:spam_project) { create(:project).tap(&:hide_as_spam!) }
         let!(:soft_destroyed_project) { create(:project).tap(&:soft_destroy!) }
@@ -126,6 +136,28 @@ RSpec.describe Admin::ProjectsController, type: :controller do
           expect(response).to redirect_to(admin_projects_path)
           expect(flash[:notice]).to eq '2件のプロジェクトをスパム認定しました'
         end
+
+        context 'with filter and page params' do
+          let(:params) do
+            { project_ids: [project1.id.to_s, project2.id.to_s], q: 'keyword', page: '3' }
+          end
+
+          it 'リダイレクト先に q と page を引き継ぐ' do
+            subject
+            expect(response).to redirect_to(admin_projects_path(q: 'keyword', page: '3'))
+          end
+        end
+
+        context 'with blank filter and page params' do
+          let(:params) do
+            { project_ids: [project1.id.to_s, project2.id.to_s], q: '', page: '' }
+          end
+
+          it '空クエリを付けずに一覧へリダイレクトする' do
+            subject
+            expect(response).to redirect_to(admin_projects_path)
+          end
+        end
       end
 
       context 'when some projects fail' do
@@ -157,6 +189,15 @@ RSpec.describe Admin::ProjectsController, type: :controller do
           subject
           expect(response).to redirect_to(admin_projects_path)
           expect(flash[:alert]).to eq 'プロジェクトを選択してください'
+        end
+
+        context 'with filter and page params' do
+          let(:params) { { project_ids: [], q: 'keyword', page: '3' } }
+
+          it 'リダイレクト先に q と page を引き継ぐ' do
+            subject
+            expect(response).to redirect_to(admin_projects_path(q: 'keyword', page: '3'))
+          end
         end
       end
 

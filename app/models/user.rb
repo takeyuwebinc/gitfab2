@@ -55,6 +55,7 @@ class User < ApplicationRecord
   validates :location, length: { maximum: 255 }
 
   scope :active, -> { where(is_deleted: false) }
+  scope :system_admin, -> { where(authority: 'admin') }
 
   concerning :Draft do
     def generate_draft

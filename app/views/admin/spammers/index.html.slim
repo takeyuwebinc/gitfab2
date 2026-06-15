@@ -24,6 +24,6 @@
         td
           = l(spammer.detected_at)
         td
-          = button_to "取り消し", admin_spammer_path(spammer), method: :delete
+          = button_to "取り消し", admin_spammer_path(spammer, page: params[:page]), method: :delete, form: { data: { turbo: true } }
 
   = paginate(@spammers)

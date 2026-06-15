@@ -3,6 +3,16 @@
 describe Card::Usage do
   it_behaves_like 'Card', :usage
 
+  describe '.for_project' do
+    let(:project) { FactoryBot.create(:user_project) }
+    let!(:target) { FactoryBot.create(:usage, project: project) }
+    let!(:other) { FactoryBot.create(:usage) }
+
+    it '指定プロジェクトの Usage のみ返すこと' do
+      expect(Card::Usage.for_project(project.id)).to contain_exactly(target)
+    end
+  end
+
   describe '#spam_author' do
     let(:usage) { FactoryBot.create(:usage) }
 

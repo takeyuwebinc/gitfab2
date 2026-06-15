@@ -27,6 +27,8 @@ class Tag < ApplicationRecord
   belongs_to :user
   belongs_to :project
 
+  scope :for_project, ->(project_id) { where(project_id: project_id) }
+
   concerning :Draft do
     def generate_draft
       name.to_s

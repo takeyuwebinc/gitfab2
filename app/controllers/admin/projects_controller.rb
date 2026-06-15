@@ -27,7 +27,7 @@ class Admin::ProjectsController < Admin::ApplicationController
   def batch_spam
     project_ids = params[:project_ids] || []
     if project_ids.empty?
-      redirect_to admin_projects_path, alert: 'プロジェクトを選択してください'
+      redirect_to filtered_admin_projects_path, alert: 'プロジェクトを選択してください'
       return
     end
 
@@ -35,9 +35,9 @@ class Admin::ProjectsController < Admin::ApplicationController
     result = SpamDesignationService.call(projects)
 
     if result.failed.empty?
-      redirect_to admin_projects_path, notice: "#{result.success}件のプロジェクトをスパム認定しました"
+      redirect_to filtered_admin_projects_path, notice: "#{result.success}件のプロジェクトをスパム認定しました"
     else
-      redirect_to admin_projects_path, alert: "#{result.success}件を処理しましたが、#{result.failed.size}件は失敗しました"
+      redirect_to filtered_admin_projects_path, alert: "#{result.success}件を処理しましたが、#{result.failed.size}件は失敗しました"
     end
   end
 
@@ -45,5 +45,12 @@ class Admin::ProjectsController < Admin::ApplicationController
 
     def load_project
       @project = Project.friendly.find(params[:id])
+    end
+
+    # 一括スパム認定後も操作前の検索フィルタ・ページを保たせる。
+    # フォームの hidden field は空でも空文字を送るため、空クエリが URL に残らないよう
+    # ブランク値を除外してから一覧パスを組み立てる。
+    def filtered_admin_projects_path
+      admin_projects_path({ q: params[:q], page: params[:page] }.compact_blank)
     end
 end

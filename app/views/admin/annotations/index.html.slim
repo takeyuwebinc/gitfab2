@@ -11,9 +11,16 @@
     = link_to "approved", admin_annotations_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_annotations_path(status: "spam"), class: 'nav-link'
 
+  - if @project
+    .mb-2.alert.alert-info.d-flex.align-items-center.justify-content-between
+      span
+        | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
+      = link_to "絞り込みを解除", admin_annotations_path(status: @status), class: 'btn btn-sm btn-outline-secondary'
+
   .mb-3
     - if @annotations.length.positive?
-      = button_to "すべての未確認を一括スパムにする", admin_annotations_spam_batch_path(before: @annotations.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+      - batch_label = @project ? "このプロジェクトの未確認を一括スパムにする" : "すべての未確認を一括スパムにする"
+      = button_to batch_label, admin_annotations_spam_batch_path(before: @annotations.first.created_at, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true, turbo_confirm: "スパムにしますか？" } }
     - else
       = button_to "すべての未確認を一括スパムにする", "#", disabled: true
 
@@ -39,13 +46,13 @@
             p.text-muted.small
               = truncate(annotation.description.to_s, length: 80)
         td.project-name
-          = "#{annotation.project.owner.name}/#{annotation.project.title}"
+          = link_to "#{annotation.project.owner.name}/#{annotation.project.title}", admin_annotations_path(project_id: annotation.project.id, status: @status)
         td.management
           - if annotation.unconfirmed?
-            = button_to "承認", admin_annotation_approval_path(annotation, status: @status), method: :post
+            = button_to "承認", admin_annotation_approval_path(annotation, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
           - if annotation.approved?
-            = button_to "未承認に戻す", admin_annotation_approval_path(annotation, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_annotation_approval_path(annotation, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
           - if annotation.spam?
-            = button_to "未承認に戻す", admin_annotation_spam_path(annotation, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_annotation_spam_path(annotation, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
 
   = paginate(@annotations)

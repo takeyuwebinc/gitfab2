@@ -46,6 +46,7 @@ gem 'sass-rails'
 gem 'sprockets', '~> 4.2', '>= 4.2.1'
 gem 'babel-transpiler'
 gem 'jsbundling-rails'
+gem 'turbo-rails'
 
 gem 'stl', github: 'oshimaryo/stl-ruby'
 gem 'stl2gif', github: 'takeyuwebinc/stl2gif', branch: 'develop'

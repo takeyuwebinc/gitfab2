@@ -31,6 +31,13 @@ RSpec.describe Admin::SpammersController, type: :controller do
         expect { subject }.to change(Spammer, :count).by(-1)
         is_expected.to redirect_to admin_spammers_path
       end
+
+      context "page が指定されたとき" do
+        subject { delete :destroy, params: { id: spammer.id, page: "2" } }
+        it "操作前のページを維持して一覧に戻すこと" do
+          is_expected.to redirect_to admin_spammers_path(page: "2")
+        end
+      end
     end
 
     context "without authority" do
