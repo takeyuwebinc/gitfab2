@@ -1,30 +1,36 @@
 # 個別ユーザーの管理者権限の付与（create）・剥奪（destroy）を受け付ける。
 # 状態遷移・誤操作防止・監査記録は AdminAuthorityChangeService が担い、本コントローラは
-# 結果に応じた画面通知とリダイレクトに徹する。検索条件（q・page）は操作後も一覧の
-# 表示状態を保つためリダイレクト先へ引き継ぐ。
+# 結果に応じた画面通知とリダイレクトに徹する。検索条件（q・page・管理者権限フィルタ
+# admin_only）は操作後も一覧の表示状態を保つためリダイレクト先へ引き継ぐ。
 class Admin::Users::AdminAuthoritiesController < Admin::ApplicationController
   before_action :load_user
 
   def create
     authorize! :grant_admin_authority, @user
     result = AdminAuthorityChangeService.grant(target_user: @user, operator: current_user)
-    redirect_to admin_users_path(q: params[:q], page: params[:page]), **flash_for(:grant, result)
+    redirect_to admin_users_path(**index_params), **flash_for(:grant, result)
   end
 
   def destroy
     authorize! :revoke_admin_authority, @user
     result = AdminAuthorityChangeService.revoke(target_user: @user, operator: current_user)
-    redirect_to admin_users_path(q: params[:q], page: params[:page]), **flash_for(:revoke, result)
+    redirect_to admin_users_path(**index_params), **flash_for(:revoke, result)
   end
 
   private
+
+  # 操作後に一覧の検索・絞り込み・ページ位置を保つために引き継ぐクエリ。
+  # nil の項目は URL ヘルパーが省略する。
+  def index_params
+    { q: params[:q], page: params[:page], admin_only: params[:admin_only] }
+  end
 
   # 一覧の URL は friendly_id の slug を含むため slug で対象を解決する。対象が見つから
   # ない場合（同時削除・不正な URL）は例外で中断せず、一覧へ戻して理由を表示する。
   def load_user
     @user = User.friendly.find(params[:user_id])
   rescue ActiveRecord::RecordNotFound
-    redirect_to admin_users_path(q: params[:q], page: params[:page]), alert: "対象のユーザーが見つかりません"
+    redirect_to admin_users_path(**index_params), alert: "対象のユーザーが見つかりません"
   end
 
   def flash_for(action, result)

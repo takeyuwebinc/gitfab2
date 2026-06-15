@@ -23,6 +23,15 @@ RSpec.describe Admin::Users::AdminAuthoritiesController, type: :controller do
         expect(flash[:notice]).to be_present
       end
 
+      context '検索条件（q・page・admin_only）が指定されたとき' do
+        subject { post :create, params: { user_id: target.to_param, q: 'alice', page: '2', admin_only: '1' } }
+
+        it '付与後もフィルタ・ページを維持して一覧へ戻る' do
+          subject
+          expect(response).to redirect_to(admin_users_path(q: 'alice', page: '2', admin_only: '1'))
+        end
+      end
+
       context '対象が既に管理者の場合（冪等）' do
         let!(:target) { create(:administrator) }
 
@@ -59,6 +68,15 @@ RSpec.describe Admin::Users::AdminAuthoritiesController, type: :controller do
           expect(response).to redirect_to(admin_users_path)
           expect(flash[:alert]).to be_present
         end
+
+        context '検索条件（q・page・admin_only）が指定されたとき' do
+          subject { delete :destroy, params: { user_id: 'no-such-user', q: 'alice', page: '2', admin_only: '1' } }
+
+          it 'フィルタ・ページを維持して一覧へ戻る' do
+            subject
+            expect(response).to redirect_to(admin_users_path(q: 'alice', page: '2', admin_only: '1'))
+          end
+        end
       end
 
       context '他に管理者が残る場合' do
@@ -72,6 +90,15 @@ RSpec.describe Admin::Users::AdminAuthoritiesController, type: :controller do
           subject
           expect(response).to redirect_to(admin_users_path)
           expect(flash[:notice]).to be_present
+        end
+
+        context '検索条件（q・page・admin_only）が指定されたとき' do
+          subject { delete :destroy, params: { user_id: target.to_param, q: 'bob', page: '3', admin_only: '1' } }
+
+          it '剥奪後もフィルタ・ページを維持して一覧へ戻る' do
+            subject
+            expect(response).to redirect_to(admin_users_path(q: 'bob', page: '3', admin_only: '1'))
+          end
         end
       end
 
