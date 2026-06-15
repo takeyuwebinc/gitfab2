@@ -28,6 +28,15 @@ RSpec.describe Admin::Projects::SpamsController, type: :controller do
           expect(response).to redirect_to(admin_projects_path(status: 'spam'))
           expect(flash[:notice]).to be_present
         end
+
+        context 'when q and page are given' do
+          subject { delete :destroy, params: { project_id: project.id, q: 'keyword', page: '2' } }
+
+          it 'redirects preserving the search keyword and page' do
+            subject
+            expect(response).to redirect_to(admin_projects_path(status: 'spam', q: 'keyword', page: '2'))
+          end
+        end
       end
 
       context 'when revocation fails' do
@@ -37,6 +46,15 @@ RSpec.describe Admin::Projects::SpamsController, type: :controller do
           subject
           expect(response).to redirect_to(admin_projects_path(status: 'spam'))
           expect(flash[:alert]).to be_present
+        end
+
+        context 'when q and page are given' do
+          subject { delete :destroy, params: { project_id: project.id, q: 'keyword', page: '2' } }
+
+          it 'redirects preserving the search keyword and page' do
+            subject
+            expect(response).to redirect_to(admin_projects_path(status: 'spam', q: 'keyword', page: '2'))
+          end
         end
       end
     end

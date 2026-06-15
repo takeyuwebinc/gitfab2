@@ -30,7 +30,7 @@
             td
               = project.spam_hidden_at&.strftime('%Y-%m-%d %H:%M')
             td
-              = button_to 'スパム認定取消', admin_project_spam_path(project), method: :delete, data: { confirm: 'スパム認定を取り消しますか？' }
+              = button_to 'スパム認定取消', admin_project_spam_path(project, q: params[:q], page: params[:page]), method: :delete, form: { data: { turbo: true, turbo_confirm: 'スパム認定を取り消しますか？' } }
   - else
     = form_tag batch_spam_admin_projects_path, method: :post, id: 'batch-spam-form' do
       = hidden_field_tag :q, params[:q]
