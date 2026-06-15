@@ -131,6 +131,16 @@ describe User do
     it { is_expected.to eq project }
   end
 
+  describe '.system_admin' do
+    let!(:admin) { create(:administrator) }
+    let!(:non_admin) { create(:user) }
+
+    it '管理者権限を持つユーザーのみ返すこと' do
+      expect(User.system_admin).to include(admin)
+      expect(User.system_admin).not_to include(non_admin)
+    end
+  end
+
   describe '#is_system_admin?' do
     subject { user.is_system_admin? }
     let(:user) { User.new(authority: authority) }

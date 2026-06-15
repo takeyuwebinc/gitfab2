@@ -7,6 +7,9 @@
 
   = form_tag admin_users_path, method: :get do
     = search_field_tag(:q, params[:q], placeholder: 'ユーザー名・メールアドレス')
+    label
+      = check_box_tag(:admin_only, '1', params[:admin_only].present?)
+      | 管理者権限
     = submit_tag('検索')
 
   table.table
@@ -24,8 +27,8 @@
           td = user.is_system_admin? ? 'あり' : '-'
           td
             - if user.is_system_admin?
-              = button_to '剥奪', admin_user_admin_authority_path(user, q: params[:q], page: params[:page]), method: :delete, disabled: !can?(:revoke_admin_authority, user), data: { confirm: "#{user.name} の管理者権限を剥奪しますか？" }
+              = button_to '剥奪', admin_user_admin_authority_path(user, q: params[:q], page: params[:page], admin_only: params[:admin_only]), method: :delete, disabled: !can?(:revoke_admin_authority, user), data: { confirm: "#{user.name} の管理者権限を剥奪しますか？" }
             - else
-              = button_to '付与', admin_user_admin_authority_path(user, q: params[:q], page: params[:page]), method: :post, disabled: !can?(:grant_admin_authority, user), data: { confirm: "#{user.name} に管理者権限を付与しますか？" }
+              = button_to '付与', admin_user_admin_authority_path(user, q: params[:q], page: params[:page], admin_only: params[:admin_only]), method: :post, disabled: !can?(:grant_admin_authority, user), data: { confirm: "#{user.name} に管理者権限を付与しますか？" }
 
   = paginate(@users)
