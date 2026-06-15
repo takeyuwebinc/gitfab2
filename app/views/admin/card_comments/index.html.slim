@@ -47,7 +47,7 @@
         td.commenter
           = card_comment.user.name
         td.project-name
-          = link_to card_comment.card.project.title_with_owner_name, admin_card_comments_path(project_id: card_comment.card.project_id, status: @status)
+          = link_to card_comment.card.project.title_with_owner_name, admin_card_comments_path(project_id: card_comment.card.project.id, status: @status)
         td.management
           - if card_comment.unconfirmed?
             = button_to "承認", admin_card_comment_approval_path(card_comment, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
