@@ -57,6 +57,13 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: $common-novelsans-semibold;
   }
+
+  // テキストリンクを破線下線で明示し、クリック可能だと分かりやすくする。
+  // ボタン（.btn）とナビゲーション（.nav-link）は対象外。
+  a:not(.btn):not(.nav-link) {
+    text-decoration: underline dashed;
+    text-underline-offset: 2px;
+  }
 }
 
 #admin-nav {
