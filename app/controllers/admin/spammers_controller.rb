@@ -5,6 +5,6 @@ class Admin::SpammersController < Admin::ApplicationController
 
   def destroy
     Spammer.find(params[:id]).destroy!
-    redirect_to admin_spammers_path, notice: 'スパム報告を削除しました'
+    redirect_to admin_spammers_path(page: params[:page]), notice: 'スパム報告を削除しました'
   end
 end
