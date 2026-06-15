@@ -39,5 +39,17 @@
       td
         = @project.original ? link_to(@project.original.title_with_owner_name, [:admin, @project]) : '-'
 
+  h3.h3 このプロジェクトのモデレーション
+  ul
+    li
+      = link_to 'プロジェクトコメント', admin_project_comments_path(project_id: @project.id)
+    li
+      = link_to 'カードコメント', admin_card_comments_path(project_id: @project.id)
+    li
+      = link_to 'Usage', admin_usages_path(project_id: @project.id)
+    li
+      = link_to 'Annotation', admin_annotations_path(project_id: @project.id)
+    li
+      = link_to 'タグ', admin_tags_path(project_id: @project.id)
 
   = button_to('スパム認定', admin_project_path(@project.id), method: :delete, class: 'btn btn-danger btn-lg', data: {confirm: '本当にスパム認定しますか？'})

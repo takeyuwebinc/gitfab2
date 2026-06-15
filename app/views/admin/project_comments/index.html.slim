@@ -11,9 +11,15 @@
     = link_to "approved", admin_project_comments_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_project_comments_path(status: "spam"), class: 'nav-link'
 
+  - if @project
+    .mb-2.alert.alert-info
+      | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
+      = link_to "絞り込み解除", admin_project_comments_path(status: @status), class: 'ms-2'
+
   .mb-3
     - if @project_comments.length.positive?
-      = button_to "すべての未確認コメントをスパムにする", admin_project_comments_spam_batch_path(before: @project_comments.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+      - batch_label = @project ? "このプロジェクトの未確認コメントをすべてスパムにする" : "すべての未確認コメントをスパムにする"
+      = button_to batch_label, admin_project_comments_spam_batch_path(before: @project_comments.first.created_at, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true, turbo_confirm: "スパムにしますか？" } }
     - else
       = button_to "すべての未確認コメントをスパムにする", "#", disabled: true
 
@@ -40,13 +46,13 @@
         td.commenter
           = project_comment.user.name
         td.project-name
-          = project_comment.project.title_with_owner_name
+          = link_to project_comment.project.title_with_owner_name, admin_project_comments_path(project_id: project_comment.project_id, status: @status)
         td.management
           - if project_comment.unconfirmed?
-            = button_to "承認", admin_project_comment_approval_path(project_comment, status: @status), method: :post
+            = button_to "承認", admin_project_comment_approval_path(project_comment, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
           - if project_comment.approved?
-            = button_to "未承認に戻す", admin_project_comment_approval_path(project_comment, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_project_comment_approval_path(project_comment, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
           - if project_comment.spam?
-            = button_to "未承認に戻す", admin_project_comment_spam_path(project_comment, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_project_comment_spam_path(project_comment, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
 
   = paginate(@project_comments)

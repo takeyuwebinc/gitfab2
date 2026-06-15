@@ -10,6 +10,16 @@ describe Card::Annotation do
     it { expect(Card::Annotation).to be_respond_to(:ordered_by_position) }
   end
 
+  describe '.for_project' do
+    let(:project) { FactoryBot.create(:user_project) }
+    let!(:target) { FactoryBot.create(:annotation, state: FactoryBot.create(:state, :without_annotations, project: project)) }
+    let!(:other) { FactoryBot.create(:annotation) }
+
+    it 'state 経由で指定プロジェクトの annotation のみ返すこと' do
+      expect(Card::Annotation.for_project(project.id)).to contain_exactly(target)
+    end
+  end
+
   describe '#spam_author' do
     let(:annotation) { FactoryBot.create(:annotation) }
 

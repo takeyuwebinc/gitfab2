@@ -13,6 +13,14 @@ RSpec.describe Admin::CardComments::ApprovalsController, type: :controller do
         expect_any_instance_of(CardComment).to receive(:approve!)
         is_expected.to redirect_to(admin_card_comments_path)
       end
+
+      context "status と page が指定されたとき" do
+        subject { post :create, params: { card_comment_id: card_comment.id, status: "unconfirmed", page: "2" } }
+        it "操作前のページ・絞り込みを維持して一覧に戻すこと" do
+          allow_any_instance_of(CardComment).to receive(:approve!)
+          is_expected.to redirect_to(admin_card_comments_path(status: "unconfirmed", page: "2"))
+        end
+      end
     end
 
     context "without authority" do

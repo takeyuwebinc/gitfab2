@@ -29,4 +29,10 @@ class Admin::Comments::BaseController < Admin::ApplicationController
   def markable_index_path(**options)
     public_send(:"admin_#{resource_key.pluralize}_path", **options)
   end
+
+  # モデレーション操作後のリダイレクトで、操作前と同じ一覧の位置・絞り込みに
+  # 戻すために維持するクエリ。nil の項目は URL ヘルパーが省略する。
+  def preserved_index_params
+    { status: params[:status], page: params[:page], project_id: params[:project_id] }
+  end
 end

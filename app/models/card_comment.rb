@@ -26,6 +26,8 @@ class CardComment < ApplicationRecord
   belongs_to :card, counter_cache: :comments_count
   belongs_to :user
 
+  scope :for_project, ->(project_id) { joins(:card).where(cards: { project_id: project_id }) }
+
   validates :body, presence: true
 
   # コメントオブジェクトを作成する

@@ -1,3 +1,13 @@
+- content_for :head do
+  meta name="turbo-refresh-method" content="morph"
+  meta name="turbo-refresh-scroll" content="preserve"
+  / turbo-rails の turbo.js は ESM のため module として読み込む（classic 連結では
+  / export が構文エラーになり Turbo がロードされない）。読み込み直後に Turbo Drive を
+  / 無効化し、モデレーション系フォームのみ data-turbo="true" で個別に opt-in する。
+  / module スクリプトは記述順に実行されるため、無効化は turbo.js の後に走る。
+  = javascript_include_tag "turbo", type: "module"
+  = javascript_tag type: "module" do
+    == "if (window.Turbo && window.Turbo.session) { window.Turbo.session.drive = false; }"
 - content_for :stylesheet do
   = stylesheet_link_tag "admin", media: "all"
 - content_for :javascript do

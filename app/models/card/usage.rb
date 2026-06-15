@@ -29,6 +29,8 @@ class Card::Usage < Card
 
   belongs_to :project, counter_cache: :usages_count
 
+  scope :for_project, ->(project_id) { where(project_id: project_id) }
+
   # 作成者は contributions のうち最古のレコードの contributor。
   # contribution が無いカードでは特定できないため nil を返す。
   def spam_author

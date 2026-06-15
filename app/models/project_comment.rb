@@ -26,6 +26,8 @@ class ProjectComment < ApplicationRecord
   belongs_to :user
   belongs_to :project
 
+  scope :for_project, ->(project_id) { where(project_id: project_id) }
+
   validates :body, presence: true, length: { maximum: 300 }
 
   def manageable_by?(user)

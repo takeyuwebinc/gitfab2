@@ -11,9 +11,15 @@
     = link_to "approved", admin_tags_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_tags_path(status: "spam"), class: 'nav-link'
 
+  - if @project
+    .mb-2.alert.alert-info
+      | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
+      = link_to "絞り込み解除", admin_tags_path(status: @status), class: 'ms-2'
+
   .mb-3
     - if @tags.length.positive?
-      = button_to "すべての未確認を一括スパムにする", admin_tags_spam_batch_path(before: @tags.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+      - batch_label = @project ? "このプロジェクトの未確認を一括スパムにする" : "すべての未確認を一括スパムにする"
+      = button_to batch_label, admin_tags_spam_batch_path(before: @tags.first.created_at, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true, turbo_confirm: "スパムにしますか？" } }
     - else
       = button_to "すべての未確認を一括スパムにする", "#", disabled: true
 
@@ -40,13 +46,13 @@
         td.tagger
           = tag.user.name
         td.project-name
-          = "#{tag.project.owner.name}/#{tag.project.title}"
+          = link_to "#{tag.project.owner.name}/#{tag.project.title}", admin_tags_path(project_id: tag.project_id, status: @status)
         td.management
           - if tag.unconfirmed?
-            = button_to "承認", admin_tag_approval_path(tag, status: @status), method: :post
+            = button_to "承認", admin_tag_approval_path(tag, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
           - if tag.approved?
-            = button_to "未承認に戻す", admin_tag_approval_path(tag, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_tag_approval_path(tag, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
           - if tag.spam?
-            = button_to "未承認に戻す", admin_tag_spam_path(tag, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_tag_spam_path(tag, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
 
   = paginate(@tags)

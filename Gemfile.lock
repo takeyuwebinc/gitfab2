@@ -518,6 +518,9 @@ GEM
     tins (1.21.1)
     truncate_html (0.9.3)
     tsort (0.2.0)
+    turbo-rails (2.0.23)
+      actionpack (>= 7.1.0)
+      railties (>= 7.1.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unf (0.1.4)
@@ -618,6 +621,7 @@ DEPENDENCIES
   stl!
   stl2gif!
   truncate_html
+  turbo-rails
   unicorn
   web-console
   webmock

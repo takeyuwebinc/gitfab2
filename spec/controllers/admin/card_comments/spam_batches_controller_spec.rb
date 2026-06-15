@@ -20,6 +20,27 @@ RSpec.describe Admin::CardComments::SpamBatchesController, type: :controller do
         expect_any_instance_of(CardComment).to receive(:mark_spam!).exactly(1).times
         is_expected.to redirect_to(admin_card_comments_path)
       end
+
+      context "status と page が指定されたとき" do
+        subject { post :create, params: { before: time.to_param, status: "unconfirmed", page: "2" } }
+        it "操作前のページ・絞り込みを維持して一覧に戻すこと" do
+          allow_any_instance_of(CardComment).to receive(:mark_spam!)
+          is_expected.to redirect_to(admin_card_comments_path(status: "unconfirmed", page: "2"))
+        end
+      end
+
+      context "project_id が指定されたとき" do
+        subject { post :create, params: { before: time.to_param, project_id: project.id } }
+        let(:project) { create(:user_project) }
+        let!(:in_project) { create(:card_comment, card: create(:note_card, project: project), created_at: time) }
+        let!(:out_project) { create(:card_comment, card: create(:note_card), created_at: time) }
+
+        it "当該プロジェクトの未確認のみスパムにすること" do
+          subject
+          expect(in_project.reload).to be_spam
+          expect(out_project.reload).to be_unconfirmed
+        end
+      end
     end
 
     context "without authority" do

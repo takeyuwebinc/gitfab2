@@ -3,6 +3,16 @@
 describe Tag do
   it_behaves_like 'DraftInterfaceTest', FactoryBot.create(:tag)
 
+  describe '.for_project' do
+    let(:project) { FactoryBot.create(:user_project) }
+    let!(:target) { FactoryBot.create(:tag, project: project) }
+    let!(:other) { FactoryBot.create(:tag) }
+
+    it '指定プロジェクトのタグのみ返すこと' do
+      expect(Tag.for_project(project.id)).to contain_exactly(target)
+    end
+  end
+
   let(:tag) { FactoryBot.create(:tag) }
 
   it { expect(tag).to be_respond_to(:name) }

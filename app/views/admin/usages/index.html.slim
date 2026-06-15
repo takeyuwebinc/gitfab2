@@ -11,9 +11,15 @@
     = link_to "approved", admin_usages_path(status: "approved"), class: 'nav-link'
     = link_to "spam", admin_usages_path(status: "spam"), class: 'nav-link'
 
+  - if @project
+    .mb-2.alert.alert-info
+      | プロジェクト「#{@project.title_with_owner_name}」で絞り込み中
+      = link_to "絞り込み解除", admin_usages_path(status: @status), class: 'ms-2'
+
   .mb-3
     - if @usages.length.positive?
-      = button_to "すべての未確認を一括スパムにする", admin_usages_spam_batch_path(before: @usages.first.created_at, status: @status), method: :post, data: { confirm: "スパムにしますか？" }
+      - batch_label = @project ? "このプロジェクトの未確認を一括スパムにする" : "すべての未確認を一括スパムにする"
+      = button_to batch_label, admin_usages_spam_batch_path(before: @usages.first.created_at, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true, turbo_confirm: "スパムにしますか？" } }
     - else
       = button_to "すべての未確認を一括スパムにする", "#", disabled: true
 
@@ -39,13 +45,13 @@
             p.text-muted.small
               = truncate(usage.description.to_s, length: 80)
         td.project-name
-          = "#{usage.project.owner.name}/#{usage.project.title}"
+          = link_to "#{usage.project.owner.name}/#{usage.project.title}", admin_usages_path(project_id: usage.project_id, status: @status)
         td.management
           - if usage.unconfirmed?
-            = button_to "承認", admin_usage_approval_path(usage, status: @status), method: :post
+            = button_to "承認", admin_usage_approval_path(usage, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
           - if usage.approved?
-            = button_to "未承認に戻す", admin_usage_approval_path(usage, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_usage_approval_path(usage, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
           - if usage.spam?
-            = button_to "未承認に戻す", admin_usage_spam_path(usage, status: @status), method: :delete
+            = button_to "未承認に戻す", admin_usage_spam_path(usage, status: @status, page: params[:page], project_id: params[:project_id]), method: :delete, form: { data: { turbo: true } }
 
   = paginate(@usages)

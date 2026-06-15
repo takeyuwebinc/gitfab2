@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 describe ProjectComment do
+  describe '.for_project' do
+    let(:project) { FactoryBot.create(:user_project) }
+    let!(:target) { FactoryBot.create(:project_comment, project: project) }
+    let!(:other) { FactoryBot.create(:project_comment) }
+
+    it '指定プロジェクトのコメントのみ返すこと' do
+      expect(ProjectComment.for_project(project.id)).to contain_exactly(target)
+    end
+  end
+
   describe "#manageable_by?" do
     subject { project_comment.manageable_by?(user) }
     let(:project_comment) { FactoryBot.create(:project_comment) }
