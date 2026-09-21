@@ -105,6 +105,8 @@
 - `projects#change_order` が成功するたびにプロジェクトの `updated_at` が更新される。更新日時の降順に並ぶ一覧（トップページ、検索結果、オーナーのページ）で、並べ替えたプロジェクトが上に来る
 - position が変わったカードの `updated_at` が更新され、State のフラグメントキャッシュが作り直される。`updated_at` は秒精度のため、同じ秒のうちに同じカードをもう一度並べ替えると、キャッシュが古いまま残ることがある。この制約は現状にもある
 - position が同じカードの表示順が id の昇順に固定される。対象はプロジェクト詳細、スライドショー、カード一覧、バックアップである。現在の表示順が id の昇順と違うカードがあると、その表示順が変わる
+- State のフラグメントキャッシュのキーは `state.annotations` の SQL のダイジェストを含むため、Annotation の関連に第 2 キーを加えると、デプロイ後に全 State のキャッシュが一度だけ外れる。負荷はキャッシュを全消去したときと同じである
+- `projects#change_order` は、`project` キーを含まないリクエスト（State が 0 枚のプロジェクトで並べ替えを確定した場合）も、`states_attributes` が空のリクエストとして成功させる。現状は `ParameterMissing` が `rescue_from Exception` に拾われ、本番で 500 になる
 - Annotation の並べ替えフォームには失敗を知らせる処理がないため、Annotation の並べ替えだけが拒否されても画面は成功したように閉じる。画面は変更しない合意のため、既知の制約として残す。State の並べ替えと Annotation の並べ替えは別々のリクエストで同時に送られるが、書き込むカードが重ならないため互いの結果を壊さない
 - 次の経路は変更しない。`states#update` と `annotations#update` でカード 1 枚の position を変える経路、カードの作成と削除、State と Annotation の相互変換、プロジェクトのフォーク（State を順序の指定なしに複製する）。position の重複はフォーク先に引き継がれる
 - 管理画面の一覧は id の降順で、position に依存しない。Usage と NoteCard は並べ替えを持たない
@@ -127,7 +129,7 @@
 | AC-7 | 同上 | 状態・権限 | リクエストに含まれないカードは、確定前の表示順で直前にあった「リクエストに含まれるカード」の直後に置かれる。直前にそのようなカードがなければ先頭に置かれる。同じ場所に置かれるカードが複数あれば、確定前の表示順を保つ。title と description が両方とも空のカードを含む範囲でも確定できる |
 | AC-8 | State の並べ替え | 正常 | 5 枚の State のうち 1 枚だけを動かすリクエストで `{ success: true }` が返り、保存後の並びが指定と一致する。draft が再生成され、プロジェクトの `updated_at` が、draft の内容が変わらない場合も更新される |
 | AC-9 | 同上 | 異常・拒否 | プロジェクトに属さない State の id を含むリクエストは 404 になる。整数の表記でない position を含むリクエストは 400 と `{ success: false }` が返る。どちらも State の position とプロジェクトの `updated_at` は変わらない |
-| AC-10 | 同上 | 境界 | `states_attributes` が空のリクエストは成功が返り、State の position は変わらない |
+| AC-10 | 同上 | 境界 | `states_attributes` が空のリクエストと、`project` キーを含まないリクエストは成功が返り、State の position は変わらない |
 | AC-11 | 同上 | 状態・権限 | プロジェクトを更新できない利用者のリクエストは 400 と `{ success: false }` が返り、position は変わらない。読み取り専用モードでは 503 が返り、position は変わらない |
 | AC-12 | Annotation の並べ替え | 正常 | Annotation を 4 枚持つ State で 1 枚だけを動かすリクエストが成功し、保存後の並びが指定と一致する。応答は State の HTML を含む JSON のままである。操作者が State の contributor に加わり、プロジェクトの `updated_at` が更新され、更新通知が送られる |
 | AC-13 | 同上 | 異常・拒否 | State に属さない Annotation の id を含むリクエストは 404、整数の表記でない position を含むリクエストは 400 になる。どちらも、Annotation の position、State の属性と `updated_at`、State の contributor は変わらず、更新通知は送られない |
