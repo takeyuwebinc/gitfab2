@@ -79,8 +79,9 @@ flowchart TD
 1. 書き込みをしない実行で、対象の行の `id` と `state_id` を出力して控える。対象の id はこの一覧に固定する。
 2. 分離レベルに REPEATABLE READ を指定した 1 つのトランザクションの中で次を行う。本番の DB の既定の分離レベルは確かめていないため、既定に頼らず指定する。
    1. 全カード（Annotation だけで約 3.1 万件）の `id`・`position`・`updated_at` を控える。
-   2. 対象の id のうち、実行時に条件（`type` が `Card::Annotation` でない、`state_id` が NULL でない）に合う行の `state_id` を、列単位の一括更新で NULL にする。条件に合わなくなった行は処理せず、報告する。
-   3. 全カードの `id`・`position`・`updated_at` が控えと一致することを確かめる。一致しなければロールバックする。この照合は、補正の書き込み自体が `position` と `updated_at` を動かしていないことを確かめるものである。REPEATABLE READ では、トランザクションの中の読み取りに他の利用者の書き込みは現れず、自身の書き込みだけが現れる。そのため、補正中の通常の利用で照合が失敗することはない。
+   2. 対象の id の行を、ロックする読み取り（`SELECT ... FOR UPDATE`）で読み直す。このうち条件（`type` が `Card::Annotation` でない、`state_id` が NULL でない）に合う行を補正する行とし、その `position`・`updated_at` を控える。条件に合わなくなった行（削除された行、`type` が `Card::Annotation` になった行、`state_id` が NULL になった行）は処理せず、報告する。
+   3. 補正する行の `state_id` を、列単位の一括更新で NULL にする。
+   4. 全カードの `id`・`position`・`updated_at` を読み、補正した行は 2 の控えと、それ以外の行は 1 の控えと一致することを確かめる。一致しなければ、一致しなかった id を出力してロールバックする。この照合は、補正の書き込み自体が `position` と `updated_at` を動かしていないことを確かめるものである。REPEATABLE READ では、トランザクションの中の読み取りに、自身が書き込んでいない行への他の利用者の書き込みは現れない。一方、UPDATE は最新のコミット済みの行を書き換えるため、書き換えた行は以後の読み取りに他の利用者の書き込みを含む最新の値で現れる。補正する行を 2 でロックして読み直すのはこのためで、ロックの後は他の利用者がその行を書き換えられない。そのため、補正中の通常の利用で照合が失敗することはない。
 3. 完了後、事前調査のスクリプト（1 本目）を再実行し、Annotation 以外で `state_id` を持つ行が 0 件であることを確かめる。0 件でない場合は、行の `project_id` と `updated_at` から経路を調べる（`project_id` が NULL の行は `type` の一括代入の形である）。
 
 補正した行は、控えた `id` と `state_id` を列単位の更新で書き戻せば元に戻せる。
@@ -105,7 +106,7 @@ flowchart TD
 - テスト:
   - [spec/models/card/annotation_spec.rb](../../spec/models/card/annotation_spec.rb) の `#to_state!` は、Annotation の親 State と変換先のプロジェクトを同じプロジェクトにそろえる。受け入れ条件 AC-1 から AC-5 のケースを追加する。既存のケース（型、`states_count`、`position`）は残す。
   - [spec/models/card/state_spec.rb](../../spec/models/card/state_spec.rb) の `#dup_document` と [spec/models/project_spec.rb](../../spec/models/project_spec.rb) の `#fork_for!` に、AC-8 から AC-11 のケースを追加する。`#to_annotation!` には AC-7 のケースを追加し、既存のケースは変更しない。
-  - [spec/controllers/annotations_controller_spec.rb](../../spec/controllers/annotations_controller_spec.rb) の `to_state` の既存のケースは変更しない。
+  - [spec/controllers/annotations_controller_spec.rb](../../spec/controllers/annotations_controller_spec.rb) の `to_state` の既存のケースは変更しない。既存のケースは編集権限のない操作者と読み取り専用モードだけで、未ログインのケースがないため、AC-6 の未ログインのケースを追加する。
   - データ補正のスクリプトは、本番で見つかった形（同じプロジェクトの State を参照、フォークで複製された行、参照先のレコードなし）をローカルに作って実行し、AC-12 から AC-16 を確かめてから本番に渡す。
 
 ## 関連 ADR
@@ -123,7 +124,7 @@ AC-1 から AC-11 は自動テスト（RSpec）で確かめる。AC-12 から AC
 | AC-3 | 同上 | 正常 | 変換の前後で、変換元の親 State の並びに属さないカード（同じプロジェクトのほかの State と、別プロジェクトの State を含む）の `position` が変わらない |
 | AC-4 | 同上 | 異常・拒否 | タイトルと本文の両方が空の Annotation を変換すると検証の例外が送出され、行の `type`・`state_id`・`position` とプロジェクトの `states_count` は変わらない |
 | AC-5 | 同上 | 境界 | 親 State の Annotation が変換する 1 件だけのとき、変換後にその親へ追加した Annotation の `position` は 1 になる |
-| AC-6 | 同上 | 状態・権限 | 編集権限のない操作者、未ログイン、読み取り専用モードでは、`to_state` の要求が従来どおり拒否される（既存のテストが通る） |
+| AC-6 | 同上 | 状態・権限 | 編集権限のない操作者、未ログイン、読み取り専用モードでは、`to_state` の要求が従来どおり拒否される（既存のテストと、追加する未ログインのケースが通る） |
 | AC-7 | 同上 | 状態・権限 | `to_annotation!` で State を Annotation に変換すると、変換後の Annotation の `state_id` は変換先の State の id になる（NULL にならない） |
 | AC-8 | `dup_document` | 正常 | `state_id` を持つ State を含むプロジェクトをフォークすると、フォーク先のすべての State の `state_id` が NULL になる。フォーク先の Annotation は元と同じ件数で、`state_id` はフォーク先の State を指す |
 | AC-9 | 同上 | 異常・拒否 | 該当なし（`dup_document` は引数を受け取らず、入力を拒否する条件を持たない。複製したカードが保存時の検証で失敗しうるのは既存のふるまいで、この変更は検証に関わる属性を変えない） |
