@@ -43,6 +43,8 @@ class Card < ApplicationRecord
   # position の昇順に並べ、position が同じカードは id の昇順に並べる。MySQL は同じ position の
   # 行の順序を保証せず、実行計画しだいで画面ごとに並びが揺れるため、id で順序を確定させる。
   # rearrange! はこの順を「現在の表示順」として扱い、画面に出ないカードの置き場所を決める。
+  # position の重複や欠番は一括では補正しない。表示の順はこの scope で確定し、position は
+  # 並べ替えを確定したときに 1 からの連番へ振り直される。
   scope :ordered_by_position, -> { order(:position, :id) }
 
   validates :type, presence: true
@@ -89,6 +91,8 @@ class Card < ApplicationRecord
     # InvalidArrangement を送出し、どちらも何も書き込まない。
     def rearrange!(attributes_collection)
       requested = parse_arrangement(attributes_collection)
+      # 範囲の行はロックしない。同じ範囲を同時に並べ替えると結果が混ざりうるが、画面が同時に送る
+      # State と Annotation の並べ替えは書き込む行が重ならない。
       transaction do
         cards = unscope(:order).ordered_by_position.to_a
         ensure_arrangement_in_range!(cards.map(&:id), requested)
@@ -99,6 +103,7 @@ class Card < ApplicationRecord
         # 全カードの position をここで決め、コールバックと検証を通さずに書き込む。検証を通さないのは、
         # title と description が両方とも空のカードを含む範囲でも並べ替えを成り立たせるため。
         # updated_at を書き込むのは、position を表示に含むフラグメントキャッシュを作り直させるため。
+        # updated_at は秒精度のため、同じ秒のうちに同じカードを並べ替え直すとキャッシュが古いまま残りうる。
         now = Time.current
         arranged_cards(cards, requested).each.with_index(1) do |card, position|
           card.update_columns(position: position, updated_at: now) unless card.position == position
