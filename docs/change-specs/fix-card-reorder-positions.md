@@ -71,7 +71,7 @@
   3. State の保存と Annotation の並びの確定を 1 つのトランザクションで行う
   - position を除くのは `states#update` の中だけにする。`Card::Annotation` の更新可能な列の定義は変えない
   - 応答の形、contributor の追加、プロジェクトの `updated_at` の更新、更新通知は変えない
-- **変更**: State と Annotation の表示順に id の昇順を第 2 キーとして加える。対象は、両モデルの表示順の scope、State が持つ Annotation の関連 2 つ、バックアップの State の並びである
+- **変更**: State と Annotation の表示順に id の昇順を第 2 キーとして加える。対象は、両モデルの表示順の scope、State が持つ Annotation の関連 2 つ、バックアップの State の並びである。表示順の scope は基底の `Card` に 1 つだけ置き、並びの確定が「現在の表示順」として使う順と、画面の順を同じ定義にする（Usage と NoteCard にも scope ができるが、呼び出し元はない）
 - **追加**: 並びの確定で `acts_as_list` のコールバックを通さない理由と、`updated_at` を書き込む理由を、コードコメントに残す（コードレビューで確認する）
 
 既存の重複と欠番は一括では補正しない。表示順は第 2 キーで確定し、position は次に並べ替えたときに連番へ戻る。
@@ -108,7 +108,7 @@
 - State のフラグメントキャッシュのキーは `state.annotations` の SQL のダイジェストを含むため、Annotation の関連に第 2 キーを加えると、デプロイ後に全 State のキャッシュが一度だけ外れる。負荷はキャッシュを全消去したときと同じである
 - `projects#change_order` は、`project` キーを含まないリクエスト（State が 0 枚のプロジェクトで並べ替えを確定した場合）も、`states_attributes` が空のリクエストとして成功させる。現状は `ParameterMissing` が `rescue_from Exception` に拾われ、本番で 500 になる
 - Annotation の並べ替えフォームには失敗を知らせる処理がないため、Annotation の並べ替えだけが拒否されても画面は成功したように閉じる。画面は変更しない合意のため、既知の制約として残す。State の並べ替えと Annotation の並べ替えは別々のリクエストで同時に送られるが、書き込むカードが重ならないため互いの結果を壊さない
-- 次の経路は変更しない。`states#update` と `annotations#update` でカード 1 枚の position を変える経路、カードの作成と削除、State と Annotation の相互変換、プロジェクトのフォーク（State を順序の指定なしに複製する）。position の重複はフォーク先に引き継がれる
+- 次の経路は変更しない。`states#update` と `annotations#update` でカード 1 枚の position を変える経路、カードの作成と削除、State と Annotation の相互変換、プロジェクトのフォーク（State を順序の指定なしに複製する）。position の重複はフォーク先に引き継がれる。ただしフォークは Annotation を State の Annotation の関連の順に複製するため、同じ position の Annotation を複製する順は id の昇順に決まる。position はそのまま複製されるため、フォーク先の並びは元の表示順と一致する
 - 管理画面の一覧は id の降順で、position に依存しない。Usage と NoteCard は並べ替えを持たない
 - テスト: `change_order` の既存スペックは残す。並びを確定する責務のモデルスペックと、両コントローラーのスペックを追加する。表示順の scope を参照する既存スペック（`spec/models/card/state_spec.rb`、`spec/models/card/annotation_spec.rb`、`spec/support/shared_examples/orderable.rb`）は、第 2 キーの追加後も通ることを確かめる
 
