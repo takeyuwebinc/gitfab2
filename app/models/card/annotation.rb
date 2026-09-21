@@ -28,10 +28,10 @@ class Card::Annotation < Card
   include SpamMarkable
 
   belongs_to :state, class_name: "Card::State", foreign_key: :state_id, inverse_of: :annotations
-  # 並びの scope は state_id である。コールバックを通る更新で state_id を NULL にすると
-  # scope の変更として扱われ、state_id が NULL のカード全体——すなわち全プロジェクトの
-  # State——の position が振り直される。state_id を落とす必要があるときは、検証・
-  # コールバック・タイムスタンプを通らない列単位の更新を使う。
+  # 並びの scope は state_id である。state は必須のため、検証を通る保存では state_id を NULL にできない。
+  # 検証だけを飛ばしてコールバックを通る保存で NULL にすると scope の変更として扱われ、state_id が NULL の
+  # カード全体——すなわち全プロジェクトの State——の position が動く。state_id を落とす必要があるときは、
+  # 検証・コールバック・タイムスタンプを通らない列単位の更新を使う。
   acts_as_list scope: :state
 
   # Annotation は project_id 列を持たず、所属プロジェクトは state 経由で決まる。
