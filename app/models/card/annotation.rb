@@ -46,8 +46,10 @@ class Card::Annotation < Card
     end
   end
 
+  # state を解決できない孤児レコード（state_id が nil、または参照先が
+  # Card::State でない）では所属プロジェクトを特定できないため nil を返す。
   def project
-    state.project
+    state&.project
   end
 
   def to_state!(project)

@@ -38,6 +38,19 @@ RSpec.describe Admin::AnnotationsController, type: :controller do
       end
     end
 
+    # state を解決できない孤児レコードが 1 件でもあると一覧全体が 500 になっていた。
+    context "state を解決できない孤児 Annotation があるとき" do
+      let!(:orphan) { create(:annotation, status: :unconfirmed).tap { |a| a.update_column(:state_id, nil) } }
+      let!(:annotation) { create(:annotation, status: :unconfirmed) }
+
+      it "孤児も含めて一覧を表示できること" do
+        get :index
+        expect(response).to be_successful
+        expect(assigns(:annotations)).to include(orphan, annotation)
+        expect(response.body).to include("所属プロジェクトなし")
+      end
+    end
+
     context "without authority" do
       let(:user) { create(:user) }
 
