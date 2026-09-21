@@ -36,18 +36,22 @@ class StatesController < ApplicationController
   end
 
   def update
-    @state.assign_attributes(state_params)
+    attributes, annotation_arrangement = split_annotation_arrangement(state_params)
+    @state.annotations.verify_arrangement!(annotation_arrangement) if annotation_arrangement
+    @state.assign_attributes(attributes)
 
     if detect_spam_keyword(contents: [@state.title, @state.description], content_type: "State")
       render json: { success: false, error: spam_keyword_rejection_message }, status: :unprocessable_entity
       return
     end
 
-    if @state.save
+    if save_state(annotation_arrangement)
       render :update
     else
       render json: { success: false }, status: 400
     end
+  rescue Card::InvalidArrangement
+    render json: { success: false }, status: 400
   end
 
   def destroy
@@ -96,6 +100,31 @@ class StatesController < ApplicationController
 
     def state_params
       (params[:state] || ActionController::Parameters.new).permit Card::State.updatable_columns
+    end
+
+    # annotations_attributes のうち position を持つ組を、Annotation の並べ替えの依頼として取り出す。
+    # position を nested attributes で 1 件ずつ保存すると acts_as_list のコールバックが並びを崩すため、
+    # 並べ替えは Card.rearrange! に任せ、残りの属性だけを State に代入する。
+    def split_annotation_arrangement(attributes)
+      entries = attributes[:annotations_attributes]
+      return [attributes, nil] if entries.blank?
+
+      entries = entries.values unless entries.is_a?(Array)
+      # 組が Hash でない形（index をキーにしない単一の Hash など）は、そのまま並べ替えの依頼として
+      # 検証させ、不正な依頼として拒否する。
+      return [attributes, entries] unless entries.all? { |entry| entry.respond_to?(:key?) }
+
+      arrangement = entries.select { |entry| entry.key?(:position) }.map { |entry| entry.slice(:id, :position) }
+      [attributes.merge(annotations_attributes: entries.map { |entry| entry.except(:position) }), arrangement.presence]
+    end
+
+    def save_state(annotation_arrangement)
+      @state.transaction do
+        next false unless @state.save
+
+        @state.annotations.rearrange!(annotation_arrangement) if annotation_arrangement
+        true
+      end
     end
 
     def update_contribution

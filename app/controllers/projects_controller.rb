@@ -170,12 +170,22 @@ class ProjectsController < ApplicationController
 
   def change_order
     project = Project.find_with(params[:owner_name], params[:project_id])
-    parameters = params.require(:project).permit(states_attributes: [:id, :position])
-    if can?(:update, project) && project.update(parameters)
-      render json: { success: true }
-    else
+    unless can?(:update, project)
       render json: { success: false }, status: 400
+      return
     end
+
+    # State が 0 枚のプロジェクトでは、並べ替えフォームは project キーを送らない。
+    states_attributes = params.fetch(:project, {}).permit(states_attributes: [:id, :position])[:states_attributes]
+    project.transaction do
+      project.states.rearrange!(states_attributes) if states_attributes.present?
+      # draft は保存のたびに作り直されるが、State の position に依存しないため、並べ替えだけでは
+      # 内容が変わらず updated_at も更新されない。並べ替えもプロジェクトの更新として扱うため、明示して更新する。
+      project.update!(updated_at: Time.current)
+    end
+    render json: { success: true }
+  rescue Card::InvalidArrangement, ActiveRecord::RecordInvalid
+    render json: { success: false }, status: 400
   end
 
   def search
