@@ -1,6 +1,7 @@
 //= require jquery
 //= require rails-ujs
 //= require jquery_nested_form
+//= require ./nested_form_field_id
 //= require jquery.validate
 //= require jquery.validate.additional-methods
 //= require masonry.pkgd.min
