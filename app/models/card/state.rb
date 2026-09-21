@@ -25,6 +25,13 @@
 #
 
 class Card::State < Card
+  # 変換先として受け付けられない State を渡されたときに送出する。
+  # 自身を渡すと state_id が自分の id を指す Annotation になり、STI のため所属 State を
+  # 解決できず、プロジェクトのページからも一覧からも辿れなくなる。
+  # 別プロジェクトの State を渡すと、カードが元のプロジェクトから移動してしまう。
+  # どちらも書き込んだ後では元の position を復元できないため、書き込む前に拒否する。
+  class InvalidConversionTarget < StandardError; end
+
   belongs_to :project, counter_cache: :states_count
   acts_as_list scope: [:project_id, type: Card::State.name]
 
@@ -47,6 +54,9 @@ class Card::State < Card
   end
 
   def to_annotation!(parent_state)
+    raise InvalidConversionTarget if parent_state.id == id
+    raise InvalidConversionTarget if parent_state.project_id != project_id
+
     transaction do
       update!(type: Card::Annotation.name, state_id: parent_state.id)
       project.decrement!(:states_count)

@@ -400,6 +400,58 @@ describe StatesController, type: :controller do
             xhr: true
         }.to change(state.annotations, :count).by(1)
       end
+
+      context '変換先に変換元自身を指定した場合' do
+        let(:params) do
+          { owner_name: project.owner, project_id: project.name, state_id: state_2.id, dst_state_id: state_2.id }
+        end
+
+        it 'returns 422 with an error message' do
+          post :to_annotation, params: params, xhr: true
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body[:success]).to eq(false)
+          expect(body[:error]).to include('Cannot convert to the selected state')
+        end
+
+        it 'does not convert the state' do
+          expect {
+            post :to_annotation, params: params, xhr: true
+          }.to_not change { state_2.reload.attributes.slice('type', 'state_id', 'position') }
+        end
+
+        it 'does not change states_count' do
+          expect {
+            post :to_annotation, params: params, xhr: true
+          }.to_not change { project.reload.states_count }
+        end
+      end
+
+      context '変換先が存在しない、または別プロジェクトの State の場合' do
+        let(:other_project) { FactoryBot.create :user_project }
+        let!(:other_state) { FactoryBot.create(:state, project: other_project) }
+
+        it '存在しない id では 404 が返り、State が変わらないこと' do
+          expect {
+            post :to_annotation,
+              params: { owner_name: project.owner, project_id: project.name, state_id: state_2.id, dst_state_id: 0 },
+              xhr: true
+          }.to_not change { state_2.reload.attributes.slice('type', 'state_id', 'position') }
+
+          expect(response).to have_http_status(:not_found)
+        end
+
+        it '別プロジェクトの State では 404 が返り、State が変わらないこと' do
+          expect {
+            post :to_annotation,
+              params: { owner_name: project.owner, project_id: project.name, state_id: state_2.id, dst_state_id: other_state.id },
+              xhr: true
+          }.to_not change { state_2.reload.attributes.slice('type', 'state_id', 'position') }
+
+          expect(response).to have_http_status(:not_found)
+        end
+      end
     end
 
     context 'when a user is signed in' do

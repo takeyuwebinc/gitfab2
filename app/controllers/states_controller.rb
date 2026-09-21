@@ -67,6 +67,11 @@ class StatesController < ApplicationController
     else
       render json: { success: false }, status: 400
     end
+  rescue Card::State::InvalidConversionTarget
+    render json: {
+      success: false,
+      error: "Cannot convert to the selected state. Please reload the page and try again."
+    }, status: :unprocessable_entity
   end
 
   private
