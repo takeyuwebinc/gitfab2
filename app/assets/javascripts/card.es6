@@ -228,23 +228,26 @@ $(function() {
     event.preventDefault();
     const state = $(this).closest(".state");
     const src_data_position = state.data("position");
-    const state_id = state.attr("id");
-    if ($(".state").length > 2) {
+    const src_state_id = state.attr("id");
+    // 候補はプロジェクトの State の一覧だけから作る。#templates の雛形も .state を持つため、
+    // 文書全体から集めると雛形が候補に混ざる。
+    const states = $("#recipe-card-list .state");
+    if (states.length > 1) {
       const state_convert_modal = $("#state-convert-modal");
       state_convert_modal.find(".src").text(src_data_position);
-      state_convert_modal.data("target", state_id);
+      state_convert_modal.data("target", src_state_id);
 
       const select = $("#target_state");
       select.empty();
-      const states = $(".state");
       states.each(function(index, element) {
+        const dst_state_id = $(element).attr("id");
+        if (dst_state_id === src_state_id) { return; }
+
         const position = $(element).data("position");
         const title = $(element).find(".title").first().text();
         const text = position + ": " + title;
 
-        if ((position !== src_data_position) && (position !== "")) {
-          select.append($("<option>").html(text).val(position));
-        }
+        select.append($("<option>").html(text).val(dst_state_id));
       });
 
       state_convert_modal.modal("show");
@@ -255,9 +258,7 @@ $(function() {
 
   $(document).on("click", "#state-convert-modal .ok-btn", function(event) {
     event.preventDefault();
-    const dst_data_position = $("#target_state").val();
-    const dst_state = $(`.state[data-position=${dst_data_position}]`);
-    const dst_state_id = dst_state.attr("id");
+    const dst_state_id = $("#target_state").val();
 
     const project_url = $("#recipes-show").data("url");
     const state_convert_modal = $("#state-convert-modal");
@@ -266,10 +267,7 @@ $(function() {
     $.ajax({
       url: `${project_url}/states/${state_id}/to_annotation`,
       type: "GET",
-      data: {
-              dst_position: dst_data_position,
-              dst_state_id
-            },
+      data: { dst_state_id },
       dataType: "json",
       success(data) {
         const new_annotation_id = data.$oid;
