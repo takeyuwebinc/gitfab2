@@ -221,4 +221,55 @@ describe Card do
       end
     end
   end
+
+  # MySQL は同じ position の行の順序を保証しない。手元の MySQL 8.0 では、position だけで
+  # 並べると 17 枚以上で id の昇順以外の順に返るため、どの example も 20 枚で確かめる。
+  describe '表示順' do
+    let(:project) { FactoryBot.create(:project) }
+    let(:state) { project.states.create!(description: 'state') }
+
+    def create_annotations(positions)
+      positions.map.with_index do |position, i|
+        state.annotations.create!(title: "annotation #{i}").tap { |annotation| annotation.update_columns(position: position) }
+      end
+    end
+
+    def sorted_ids(cards)
+      cards.map(&:reload).sort_by { |card| [card.position, card.id] }.map(&:id)
+    end
+
+    it 'position が同じ State は id の昇順に並ぶ' do
+      states = Array.new(20) { |i| project.states.create!(description: "state #{i}").tap { |s| s.update_columns(position: i % 3) } }
+      expect(project.states.ordered_by_position.map(&:id)).to eq sorted_ids(states)
+    end
+
+    it 'すべての State の position が 0 のとき、id の昇順に並ぶ' do
+      states = Array.new(20) { |i| project.states.create!(description: "state #{i}").tap { |s| s.update_columns(position: 0) } }
+      expect(project.states.ordered_by_position.map(&:id)).to eq states.map(&:id).sort
+    end
+
+    it 'position が同じ Annotation は、表示順の scope と State の Annotation の関連のどちらでも id の昇順に並ぶ' do
+      annotations = create_annotations(Array.new(20) { |i| i % 3 })
+      expected = sorted_ids(annotations)
+
+      aggregate_failures do
+        expect(state.annotations.ordered_by_position.map(&:id)).to eq expected
+        expect(Card::State.find(state.id).annotations.map(&:id)).to eq expected
+        expect(Card::State.find(state.id).visible_annotations.map(&:id)).to eq expected
+      end
+    end
+
+    it 'すべての Annotation の position が 0 のとき、id の昇順に並ぶ' do
+      annotations = create_annotations([0] * 20)
+      expect(Card::State.find(state.id).annotations.map(&:id)).to eq annotations.map(&:id).sort
+    end
+
+    it 'スパムの Annotation は、画面に出る Annotation の並びに含まれない' do
+      annotations = create_annotations(Array.new(20) { |i| i % 3 })
+      spam = annotations.values_at(0, 7, 19)
+      spam.each { |annotation| annotation.update_columns(status: Card::Annotation.statuses[:spam]) }
+
+      expect(Card::State.find(state.id).visible_annotations.map(&:id)).to eq sorted_ids(annotations - spam)
+    end
+  end
 end

@@ -35,17 +35,15 @@ class Card::State < Card
   belongs_to :project, counter_cache: :states_count
   acts_as_list scope: [:project_id, type: Card::State.name]
 
-  has_many :annotations, ->{ order(:position) },
+  has_many :annotations, ->{ ordered_by_position },
                         class_name: 'Card::Annotation',
                         foreign_key: :state_id,
                         dependent: :destroy,
                         inverse_of: :state
-  has_many :visible_annotations, ->{ not_spam.order(:position) },
+  has_many :visible_annotations, ->{ not_spam.ordered_by_position },
                         class_name: 'Card::Annotation',
                         foreign_key: :state_id
   accepts_nested_attributes_for :annotations
-
-  scope :ordered_by_position, -> { order(:position) }
 
   class << self
     def updatable_columns

@@ -40,6 +40,11 @@ class Card < ApplicationRecord
   has_many :contributions, dependent: :destroy
   has_many :contributors, through: :contributions, class_name: "User"
 
+  # position の昇順に並べ、position が同じカードは id の昇順に並べる。MySQL は同じ position の
+  # 行の順序を保証せず、実行計画しだいで画面ごとに並びが揺れるため、id で順序を確定させる。
+  # rearrange! はこの順を「現在の表示順」として扱い、画面に出ないカードの置き場所を決める。
+  scope :ordered_by_position, -> { order(:position, :id) }
+
   validates :type, presence: true
   validate do
     if title.blank? && description.blank?
@@ -85,7 +90,7 @@ class Card < ApplicationRecord
     def rearrange!(attributes_collection)
       requested = parse_arrangement(attributes_collection)
       transaction do
-        cards = reorder(:position, :id).to_a
+        cards = unscope(:order).ordered_by_position.to_a
         ensure_arrangement_in_range!(cards.map(&:id), requested)
 
         # acts_as_list のコールバックは 1 件の移動を前提にしている。移動の前後の間にあるカードを

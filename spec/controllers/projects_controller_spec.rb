@@ -739,6 +739,43 @@ describe ProjectsController, type: :controller do
     end
   end
 
+  # MySQL は同じ position の行の順序を保証しない。手元の MySQL 8.0 では、position だけで
+  # 並べると 17 枚以上で id の昇順以外の順に返るため、20 枚で確かめる。
+  describe 'position が同じ State の表示順' do
+    let!(:project) { FactoryBot.create(:project, :public) }
+    let!(:states) do
+      Array.new(20) { |i| project.states.create!(description: "state #{i}").tap { |s| s.update_columns(position: i % 3) } }
+    end
+    let(:expected_ids) { states.map(&:reload).sort_by { |state| [state.position, state.id] }.map(&:id) }
+
+    it 'プロジェクト詳細では id の昇順に並ぶ' do
+      get :show, params: { owner_name: project.owner.slug, id: project.name }
+      expect(assigns(:states).map(&:id)).to eq expected_ids
+    end
+
+    it 'カード一覧では id の昇順に並ぶ' do
+      sign_in(project.owner)
+      get :recipe_cards_list, params: { owner_name: project.owner, project_id: project }, xhr: true
+      linked_ids = response.body.scan(/#state-(\d+)/).flatten.map(&:to_i)
+      expect(linked_ids).to eq expected_ids
+    end
+
+    it 'スライドショーでは State も Annotation も id の昇順に並び、スパムの Annotation は含まれない' do
+      state = states.first
+      annotations = Array.new(20) do |i|
+        state.annotations.create!(title: "annotation #{i}").tap { |a| a.update_columns(position: i % 3) }
+      end
+      spam = annotations.values_at(0, 7, 19)
+      spam.each { |annotation| annotation.update_columns(status: Card::Annotation.statuses[:spam]) }
+      visible_ids = (annotations - spam).map(&:reload).sort_by { |a| [a.position, a.id] }.map(&:id)
+
+      get :slideshow, params: { owner_name: project.owner, project_id: project }
+
+      expected = expected_ids.flat_map { |id| id == state.id ? [id, *visible_ids] : [id] }
+      expect(assigns(:cards).map(&:id)).to eq expected
+    end
+  end
+
   describe 'GET search' do
     context 'with no queries' do
       subject { get :search }
