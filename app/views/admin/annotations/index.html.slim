@@ -46,7 +46,10 @@
             p.text-muted.small
               = truncate(annotation.description.to_s, length: 80)
         td.project-name
-          = link_to "#{annotation.project.owner.name}/#{annotation.project.title}", admin_annotations_path(project_id: annotation.project.id, status: @status)
+          - if (project = annotation.project)
+            = link_to "#{project.owner.name}/#{project.title}", admin_annotations_path(project_id: project.id, status: @status)
+          - else
+            span.text-muted 所属プロジェクトなし
         td.management
           - if annotation.unconfirmed?
             = button_to "承認", admin_annotation_approval_path(annotation, status: @status, page: params[:page], project_id: params[:project_id]), method: :post, form: { data: { turbo: true } }
