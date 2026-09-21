@@ -140,7 +140,7 @@ class Backup
           created_at: project.created_at.iso8601,
           media: project.figures.map { |figure| image_url(figure.content.url) },
           youtube: project.figures.find { |figure| figure.link.present? }&.link,
-          states: project.states.order(:position).map do |card|
+          states: project.states.ordered_by_position.map do |card|
             {
               contributors: card.contributors.map do |contributor|
                 {

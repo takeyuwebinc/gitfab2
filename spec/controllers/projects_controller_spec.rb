@@ -587,6 +587,195 @@ describe ProjectsController, type: :controller do
     end
   end
 
+  describe 'PATCH change_order による State の並べ替え' do
+    let!(:project) { FactoryBot.create(:user_project) }
+    let!(:states) do
+      travel_to(1.day.ago) do
+        Array.new(5) { |i| project.states.create!(description: "state #{i}") }
+      end
+    end
+
+    before do
+      project.update_columns(updated_at: 1.day.ago)
+      sign_in(project.owner)
+    end
+
+    def change_order(states_attributes, **options)
+      patch :change_order,
+        params: { owner_name: project.owner, project_id: project, project: { states_attributes: states_attributes } },
+        xhr: true, **options
+    end
+
+    # 並べ替えフォームは nested_form が振る一意な index をキーにして送る。
+    def form_attributes_for(cards)
+      cards.each_with_index.to_h { |card, i| ["1695290000#{i}", { id: card.id, position: i + 1 }] }
+    end
+
+    def displayed_ids
+      Card::State.where(project_id: project.id).order(:position, :id).pluck(:id)
+    end
+
+    def stored_positions
+      Card::State.where(project_id: project.id).order(:position, :id).pluck(:position)
+    end
+
+    def json_body
+      JSON.parse(response.body, symbolize_names: true)
+    end
+
+    it '5 枚のうち 1 枚だけを動かすどの並べ替えでも、成功が返り、保存後の並びが指定と一致する' do
+      moves = (0...5).to_a.product((0...5).to_a).reject { |from, to| from == to }
+      failures = moves.filter_map do |from, to|
+        states.each_with_index { |state, i| state.update_columns(position: i + 1) }
+        order = states.dup
+        order.insert(to, order.delete_at(from))
+
+        change_order(form_attributes_for(order))
+
+        actual = [response.status, json_body, displayed_ids, stored_positions]
+        expected = [200, { success: true }, order.map(&:id), [1, 2, 3, 4, 5]]
+        { move: [from, to], actual: actual } unless actual == expected
+      end
+
+      expect(failures).to eq []
+    end
+
+    it 'draft が作り直される' do
+      project.update_columns(draft: 'stale')
+      change_order(form_attributes_for(states.reverse))
+      expect(project.reload.draft).to eq project.send(:generate_draft)
+    end
+
+    it 'draft の内容が変わらない場合も、プロジェクトの updated_at が更新される' do
+      project.update_draft!
+      project.update_columns(updated_at: 1.day.ago)
+      draft = project.reload.draft
+
+      expect { change_order(form_attributes_for(states.reverse)) }.to change { project.reload.updated_at }
+      expect([displayed_ids, project.reload.draft]).to eq [states.reverse.map(&:id), draft]
+    end
+
+    it '5 枚の全順列のどの並べ替えでも、保存後の並びが指定と一致し、position が 1 からの連番になる' do
+      failures = states.permutation.filter_map do |order|
+        states.each_with_index { |state, i| state.update_columns(position: i + 1) }
+
+        change_order(form_attributes_for(order))
+
+        actual = [response.status, displayed_ids, stored_positions]
+        expected = [200, order.map(&:id), [1, 2, 3, 4, 5]]
+        { requested: order.map(&:id), actual: actual } unless actual == expected
+      end
+
+      expect(failures).to eq []
+    end
+
+    it 'title と description が両方とも空の State を含むプロジェクトでも成功する' do
+      states.first.update_columns(title: nil, description: nil)
+      change_order(form_attributes_for(states.reverse))
+      expect([response.status, json_body, displayed_ids]).to eq [200, { success: true }, states.reverse.map(&:id)]
+    end
+
+    context '拒否されるリクエスト' do
+      def unchanged_state
+        [Card::State.where(project_id: project.id).order(:id).pluck(:id, :position, :updated_at), project.reload.updated_at]
+      end
+
+      it 'プロジェクトに属さない State の id を含むと 404 になり、position もプロジェクトの updated_at も変わらない' do
+        other_state = FactoryBot.create(:state, :without_annotations)
+        attributes = form_attributes_for(states.reverse + [other_state])
+
+        expect { change_order(attributes) }.not_to change { unchanged_state }
+        expect(response).to have_http_status(:not_found)
+      end
+
+      ['', 'abc', '1.5'].each do |position|
+        it "position が #{position.inspect} だと 400 と { success: false } が返り、position もプロジェクトの updated_at も変わらない" do
+          attributes = form_attributes_for(states.reverse)
+          attributes.values.last[:position] = position
+
+          expect { change_order(attributes) }.not_to change { unchanged_state }
+          expect([response.status, json_body]).to eq [400, { success: false }]
+        end
+      end
+
+      it 'プロジェクトが検証に通らない場合は 400 と { success: false } が返り、並べ替えの書き込みも取り消される' do
+        project.update_columns(title: '')
+
+        expect { change_order(form_attributes_for(states.reverse)) }.not_to change { unchanged_state }
+        expect([response.status, json_body]).to eq [400, { success: false }]
+      end
+
+      it 'プロジェクトを更新できない利用者のリクエストは 400 と { success: false } が返り、position は変わらない' do
+        sign_in(FactoryBot.create(:user))
+
+        expect { change_order(form_attributes_for(states.reverse)) }.not_to change { unchanged_state }
+        expect([response.status, json_body]).to eq [400, { success: false }]
+      end
+    end
+
+    context '並べ替える State がないリクエスト' do
+      # 並べ替えを確定すると連番に振り直されるため、重複と欠番のある position から始める。
+      before { states.zip([2, 2, 3, 5, 5]) { |state, position| state.update_columns(position: position) } }
+
+      def positions_by_id
+        Card::State.where(project_id: project.id).order(:id).pluck(:id, :position)
+      end
+
+      it 'states_attributes が空なら成功が返り、position は変わらず、プロジェクトの updated_at は更新される' do
+        before = positions_by_id
+
+        expect { change_order([], as: :json) }.to change { project.reload.updated_at }
+        expect([response.status, json_body, positions_by_id]).to eq [200, { success: true }, before]
+      end
+
+      it 'project キーを含まないなら成功が返り、position は変わらず、プロジェクトの updated_at は更新される' do
+        before = positions_by_id
+
+        expect {
+          patch :change_order, params: { owner_name: project.owner, project_id: project }, xhr: true
+        }.to change { project.reload.updated_at }
+        expect([response.status, json_body, positions_by_id]).to eq [200, { success: true }, before]
+      end
+    end
+  end
+
+  # MySQL は同じ position の行の順序を保証しない。手元の MySQL 8.0 では、position だけで
+  # 並べると 17 枚以上で id の昇順以外の順に返るため、20 枚で確かめる。
+  describe 'position が同じ State の表示順' do
+    let!(:project) { FactoryBot.create(:project, :public) }
+    let!(:states) do
+      Array.new(20) { |i| project.states.create!(description: "state #{i}").tap { |s| s.update_columns(position: i % 3) } }
+    end
+    let(:expected_ids) { states.map(&:reload).sort_by { |state| [state.position, state.id] }.map(&:id) }
+
+    it 'プロジェクト詳細では id の昇順に並ぶ' do
+      get :show, params: { owner_name: project.owner.slug, id: project.name }
+      expect(assigns(:states).map(&:id)).to eq expected_ids
+    end
+
+    it 'カード一覧では id の昇順に並ぶ' do
+      sign_in(project.owner)
+      get :recipe_cards_list, params: { owner_name: project.owner, project_id: project }, xhr: true
+      linked_ids = response.body.scan(/#state-(\d+)/).flatten.map(&:to_i)
+      expect(linked_ids).to eq expected_ids
+    end
+
+    it 'スライドショーでは State も Annotation も id の昇順に並び、スパムの Annotation は含まれない' do
+      state = states.first
+      annotations = Array.new(20) do |i|
+        state.annotations.create!(title: "annotation #{i}").tap { |a| a.update_columns(position: i % 3) }
+      end
+      spam = annotations.values_at(0, 7, 19)
+      spam.each { |annotation| annotation.update_columns(status: Card::Annotation.statuses[:spam]) }
+      visible_ids = (annotations - spam).map(&:reload).sort_by { |a| [a.position, a.id] }.map(&:id)
+
+      get :slideshow, params: { owner_name: project.owner, project_id: project }
+
+      expected = expected_ids.flat_map { |id| id == state.id ? [id, *visible_ids] : [id] }
+      expect(assigns(:cards).map(&:id)).to eq expected
+    end
+  end
+
   describe 'GET search' do
     context 'with no queries' do
       subject { get :search }

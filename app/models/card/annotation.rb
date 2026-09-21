@@ -34,7 +34,6 @@ class Card::Annotation < Card
   # コールバック・タイムスタンプを通らない列単位の更新を使う。
   acts_as_list scope: :state
 
-  scope :ordered_by_position, -> { order(:position) }
   # Annotation は project_id 列を持たず、所属プロジェクトは state 経由で決まる。
   scope :for_project, ->(project_id) { where(state_id: Card::State.where(project_id: project_id).select(:id)) }
 
