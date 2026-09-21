@@ -1,15 +1,4 @@
 $(function() {
-  // nested_form は追加するフィールドの index にミリ秒単位の時刻を使う。並べ替えの確定は全カード
-  // ぶんのフィールドを 1 回のループで追加するため、同じミリ秒に入ったカードの index が重なり、
-  // サーバーには重なった組の最後の 1 枚しか届かない。index を単調に増やして重ならないようにする。
-  if (window.nestedFormEvents) {
-    let lastNestedFieldId = 0;
-    window.nestedFormEvents.newId = function() {
-      lastNestedFieldId = Math.max(new Date().getTime(), lastNestedFieldId + 1);
-      return lastNestedFieldId;
-    };
-  }
-
   const up = function(cards) {
     let previousCard;
     if (cards.first().hasClass("state-wrapper")) {
