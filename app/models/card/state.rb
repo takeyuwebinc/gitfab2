@@ -65,8 +65,11 @@ class Card::State < Card
     Card::Annotation.find(id)
   end
 
+  # 複製の state_id は NULL にする。Annotation の type を書き換えて State にした行などは state_id を
+  # 持っていることがあり、そのまま複製すると複製先の State が元の親 State の Annotation の並びに混ざる。
   def dup_document
     super.tap do |doc|
+      doc.state_id = nil
       doc.annotations = annotations.map(&:dup_document)
     end
   end

@@ -127,6 +127,39 @@ describe Project do
         expect(derivative_project.usages_count).to eq(0)
       end
     end
+
+    context 'state_id を持つ State を含むとき' do
+      let(:state_a) { project.states.find_by!(title: 'a state') }
+      let(:state_b) { project.states.find_by!(title: 'b state') }
+      let(:missing_id) { Card.unscoped.maximum(:id) + 1000 }
+
+      # Annotation から変換した State に残る形。同じプロジェクトの State を指す行と、
+      # 削除されたレコードを指す行。
+      before do
+        FactoryBot.create_list(:annotation, 2, state: state_a)
+        FactoryBot.create(:annotation, state: state_b)
+        state_a.update_column(:state_id, state_b.id)
+        state_b.update_column(:state_id, missing_id)
+        project.reload
+      end
+
+      it 'フォーク先のすべての State の state_id が NULL になること' do
+        expect(Card.unscoped.where(project_id: derivative_project.id).pluck(:type, :state_id))
+          .to contain_exactly([Card::State.name, nil], [Card::State.name, nil])
+      end
+
+      it 'フォーク先の Annotation が元と同じ件数で、フォーク先の State に属すること' do
+        forked_states = Card::State.where(project_id: derivative_project.id).order(:position)
+        expect(forked_states.map { |state| [state.title, Card::Annotation.where(state_id: state.id).count] })
+          .to eq [['a state', 2], ['b state', 1]]
+      end
+
+      it '元の State の state_id を変えないこと' do
+        expect { derivative_project }
+          .not_to change { Card.unscoped.where(id: [state_a.id, state_b.id]).order(:id).pluck(:state_id) }
+          .from([state_b.id, missing_id])
+      end
+    end
   end
 
   describe '#managers' do
