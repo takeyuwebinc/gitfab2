@@ -60,7 +60,7 @@ State を Annotation に変換する画面が、変換先として変換元自�
 - **変更（`card.es6`）**: 変換先の候補は、プロジェクトの State の一覧（`#recipe-card-list`）にある State だけから作り、テンプレートを含めない。候補の値に State の id を持たせ、変換元は id で除く。表示する文言（位置とタイトル）は変えない。変換の要求は、選ばれた id をそのまま変換先として送る。変換ボタンを有効にする条件は、一覧にある State が 2 個以上、とする。
 - **削除（`card.es6`）**: `data-position` 属性で変換先の要素を探す処理と、`dst_position` の送信。
 - **変更（`Card::State#to_annotation!`）**: 変換先が変換元自身の場合と、変換元と別のプロジェクトの State の場合は、何も書き込まずに専用の例外を送出する。後者は画面からは起きない（コントローラが同じプロジェクトに限定している）が、メソッド単体の前提として検査する。
-- **変更（`StatesController#to_annotation`）**: 専用の例外をアクション内で捕捉し、422 と既存の形の JSON（`success: false` と `error`）を返す。文言は「変換先に指定できない State です。ページを再読み込みしてやり直してください」とする。存在しない変換先の扱い（404）は変えない。
+- **変更（`StatesController#to_annotation`）**: 専用の例外をアクション内で捕捉し、422 と既存の形の JSON（`success: false` と `error`）を返す。文言は「Cannot convert to the selected state. Please reload the page and try again.」とする。この画面の他の文言（`First, make 2 or more state.` 等）が英語のため、それにそろえる。存在しない変換先の扱い（404）は変えない。
 - **追加（復元。一度きりの操作）**: 本番の孤児 20 件を次のとおり処理する。件数が少ないため rake タスクにはせず、スクリプトを本番で 1 回実行する。スクリプトはリポジトリに残さない。
 
 | 対象 | 処理 |
@@ -117,6 +117,7 @@ State を Annotation に変換する画面が、変換先として変換元自�
 - [ ] 変換先に変換元自身を指定して `to_annotation` を要求すると、422 と `error` が返り、State の `type`・`state_id`・`position` とプロジェクトの `states_count` は変わらない。
 - [ ] 別プロジェクトの State を渡して `to_annotation!` を呼ぶと、専用の例外が送出され、何も変わらない。
 - [ ] 同じプロジェクトの別の State への変換は、従来どおり成功する（`states_count` が 1 減り、変換先の Annotation が 1 増える）。
+- [ ] 存在しない変換先、または別プロジェクトの State を `dst_state_id` に指定して `to_annotation` を要求すると、404 が返り、State の `type`・`state_id`・`position` は変わらない。
 - [ ] `to_annotation` の既存のテスト（権限なし、未ログイン、読み取り専用モード）が通る。
 
 ブラウザで確かめる。
