@@ -350,6 +350,22 @@ describe AnnotationsController, type: :controller do
         it { expect(response).to_not have_http_status(:ok) }
       end
     end
+
+    context 'when a user is not logged in' do
+      describe 'with correct parameters' do
+        let(:state) { project.states.create type: Card::State.name, description: 'foo' }
+        let!(:annotation) { state.annotations.create(description: 'ann') }
+        before do
+          get :to_state,
+            params: { owner_name: user.slug, project_id: project, state_id: state.id, annotation_id: annotation.id },
+            xhr: true
+        end
+        it { expect(response).to_not have_http_status(:ok) }
+        it 'does not convert the annotation to a state' do
+          expect(Card.unscoped.find(annotation.id).type).to eq Card::Annotation.name
+        end
+      end
+    end
   end
 
   # TODO: create update_contribution spec

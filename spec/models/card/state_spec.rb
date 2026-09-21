@@ -53,6 +53,11 @@ describe Card::State do
                       .and change{ project.reload.states_count }.by(-1)
     end
 
+    it '変換後の Annotation の state_id が変換先の State の id になること' do
+      subject
+      expect(Card.unscoped.find(state.id).state_id).to eq parent_state.id
+    end
+
     context '変換先が変換元自身の場合' do
       let(:parent_state) { state }
 
