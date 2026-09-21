@@ -53,6 +53,9 @@ class Card::State < Card
     end
   end
 
+  # 変換は元の位置を失う。type が並びの scope に含まれるため、State でなくなった時点で
+  # 同じプロジェクトの後続の State の position が 1 つずつ詰められ、自身の position も
+  # Annotation の並びの値に書き換わる。State へ戻しても元の位置には戻らない。
   def to_annotation!(parent_state)
     raise InvalidConversionTarget if parent_state.id == id
     raise InvalidConversionTarget if parent_state.project_id != project_id
