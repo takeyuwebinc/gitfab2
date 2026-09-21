@@ -120,8 +120,18 @@ describe Card::Annotation do
   describe '#to_state!' do
     subject { annotation.to_state!(project) }
 
-    let!(:annotation) { FactoryBot.create(:annotation) }
     let!(:project) { FactoryBot.create(:project) }
+    let!(:parent_state) { FactoryBot.create(:state, :without_annotations, project: project) }
+    let!(:annotation) { FactoryBot.create(:annotation, state: parent_state) }
+
+    def stored(card)
+      Card.unscoped.find(card.id)
+    end
+
+    # AnnotationsController#create と同じく、親 State の関連から組み立てて保存する。
+    def add_annotation_to(state)
+      Card::State.find(state.id).annotations.build(title: 'added', description: 'added').tap(&:save!)
+    end
 
     it { is_expected.to be_an_instance_of(Card::State) }
     it do
@@ -133,7 +143,95 @@ describe Card::Annotation do
     describe 'position' do
       before { FactoryBot.create_list(:state, state_count, project: project) }
       let(:state_count) { 2 }
-      it { expect(subject.position).to eq state_count + 1 }
+      # プロジェクトの State は親 State と追加した state_count 個で、position の最大値は state_count + 1。
+      it 'プロジェクトの State の position の最大値 + 1 になること' do
+        expect(subject.position).to eq state_count + 2
+      end
+    end
+
+    context '同じプロジェクトの State に属する Annotation を変換したとき' do
+      before { FactoryBot.create_list(:state, 2, :without_annotations, project: project) }
+
+      # プロジェクトの State は親 State と追加した 2 個で、position の最大値は 3。
+      it 'state_id が NULL の State になり、position がプロジェクトの State の最大値 + 1 になること' do
+        expect { subject }.to change { project.reload.states_count }.by(1)
+        expect(stored(annotation).attributes.slice('type', 'state_id', 'position'))
+          .to eq('type' => Card::State.name, 'state_id' => nil, 'position' => 4)
+      end
+    end
+
+    context '変換先の position が親に残る Annotation の position を上回るとき' do
+      # State 4 個・Annotation 3 件。変換先の position 5 は、親に残る Annotation のどれよりも大きい。
+      before do
+        FactoryBot.create_list(:state, 3, :without_annotations, project: project)
+        FactoryBot.create_list(:annotation, 2, state: parent_state)
+      end
+
+      it '元の親 State に追加した Annotation が、親に残る Annotation の最大値 + 1 の position で保存されること' do
+        subject
+        remaining_max = Card::Annotation.where(state_id: parent_state.id).maximum(:position)
+        expect(stored(annotation).position).to be > remaining_max
+        added = add_annotation_to(parent_state)
+        expect(stored(added).attributes.slice('type', 'state_id', 'position'))
+          .to eq('type' => Card::Annotation.name, 'state_id' => parent_state.id, 'position' => remaining_max + 1)
+      end
+    end
+
+    context '変換先の position が親に残る Annotation の position の最大値を下回るとき' do
+      # State 2 個・Annotation 4 件。position 1 の Annotation を変換すると、変換先の position は 3 で、
+      # 親に残る Annotation の position 4 を下回る。
+      let!(:rest) do
+        FactoryBot.create(:state, :without_annotations, project: project)
+        FactoryBot.create_list(:annotation, 3, state: parent_state)
+      end
+
+      it '親の並びへの追加と削除が、変換した State の position と updated_at を動かさないこと' do
+        subject
+        Card.unscoped.where(id: annotation.id).update_all(updated_at: Time.zone.parse('2026-01-01 00:00:00'))
+        converted = stored(annotation).attributes.slice('type', 'position', 'updated_at')
+        remaining_max = Card::Annotation.where(state_id: parent_state.id).maximum(:position)
+        expect(converted['position']).to be < remaining_max
+
+        added = add_annotation_to(parent_state)
+        expect(stored(added).position).to eq remaining_max + 1
+        Card::Annotation.find(rest.first.id).destroy
+
+        expect(stored(annotation).attributes.slice('type', 'position', 'updated_at')).to eq converted
+      end
+    end
+
+    context '変換元の親 State の並びに属さないカード' do
+      # 変換先の position（3）以上の position を持つ State を別プロジェクトに置き、state_id が NULL の
+      # カード全体の position が動いた場合に検出できるようにする。
+      let!(:other_state) { FactoryBot.create(:state, project: project, annotations_count: 2) }
+      let!(:other_project) { FactoryBot.create(:project) }
+      before { FactoryBot.create_list(:state, 4, project: other_project, annotations_count: 1) }
+
+      it 'position が変わらないこと' do
+        list_ids = Card.unscoped.where(state_id: parent_state.id).pluck(:id)
+        outside = Card.unscoped.where.not(id: list_ids).order(:id)
+        expect(outside.where(type: Card::State.name, project_id: other_project.id).maximum(:position)).to be >= 3
+        expect { subject }.not_to change { outside.pluck(:id, :position) }
+      end
+    end
+
+    context 'タイトルと本文の両方が空の Annotation を変換したとき' do
+      before { annotation.update_columns(title: nil, description: nil) }
+
+      it '検証の例外を送出し、行の type・state_id・position とプロジェクトの states_count を変えないこと' do
+        before_row = stored(annotation).attributes.slice('type', 'state_id', 'position')
+        expect {
+          expect { subject }.to raise_error(ActiveRecord::RecordInvalid)
+        }.not_to change { project.reload.states_count }
+        expect(stored(annotation).attributes.slice('type', 'state_id', 'position')).to eq before_row
+      end
+    end
+
+    context '親 State の Annotation が変換する 1 件だけのとき' do
+      it '変換後に親へ追加した Annotation の position が 1 になること' do
+        subject
+        expect(stored(add_annotation_to(parent_state)).position).to eq 1
+      end
     end
   end
 end

@@ -53,6 +53,11 @@ describe Card::State do
                       .and change{ project.reload.states_count }.by(-1)
     end
 
+    it '変換後の Annotation の state_id が変換先の State の id になること' do
+      subject
+      expect(Card.unscoped.find(state.id).state_id).to eq parent_state.id
+    end
+
     context '変換先が変換元自身の場合' do
       let(:parent_state) { state }
 
@@ -91,6 +96,36 @@ describe Card::State do
     end
     it '複製であること' do
       expect(dupped_card.annotations.map(&:id)).to_not eq(card.annotations.map(&:id))
+    end
+
+    context 'state_id を持つ State を複製したとき' do
+      let(:referenced_state) { FactoryBot.create(:state, :without_annotations, project: card.project) }
+      before { card.update_column(:state_id, referenced_state.id) }
+
+      it '複製の state_id が NULL になること' do
+        expect(Card.unscoped.find(dupped_card.id).state_id).to be_nil
+      end
+
+      it '元の State の state_id を変えないこと' do
+        expect { dupped_card }.not_to change { Card.unscoped.find(card.id).state_id }.from(referenced_state.id)
+      end
+    end
+
+    context 'state_id を持ち、Annotation が 0 件の State を複製したとき' do
+      let(:annotation_count) { 0 }
+      before { card.update_column(:state_id, Card.unscoped.maximum(:id) + 1000) }
+
+      it '保存でき、state_id が NULL になること' do
+        expect(dupped_card).to be_persisted
+        expect(Card.unscoped.find(dupped_card.id).state_id).to be_nil
+      end
+    end
+
+    context 'state_id が NULL の State を複製したとき' do
+      it '保存でき、state_id が NULL のままであること' do
+        expect(dupped_card).to be_persisted
+        expect(Card.unscoped.find(dupped_card.id).state_id).to be_nil
+      end
     end
   end
 end

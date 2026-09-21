@@ -348,6 +348,30 @@ describe AnnotationsController, type: :controller do
             xhr: true
         end
         it { expect(response).to_not have_http_status(:ok) }
+        it 'responds with 401 and does not convert the annotation to a state' do
+          expect(response).to have_http_status(:unauthorized)
+          expect(Card.unscoped.where(description: 'ann').pluck(:type, :state_id))
+            .to eq [[Card::Annotation.name, project.states.first.id]]
+          expect(project.reload.states_count).to eq 1
+        end
+      end
+    end
+
+    context 'when a user is not logged in' do
+      describe 'with correct parameters' do
+        let(:state) { project.states.create type: Card::State.name, description: 'foo' }
+        let!(:annotation) { state.annotations.create(description: 'ann') }
+        before do
+          get :to_state,
+            params: { owner_name: user.slug, project_id: project, state_id: state.id, annotation_id: annotation.id },
+            xhr: true
+        end
+        it { expect(response).to have_http_status(:unauthorized) }
+        it 'does not convert the annotation to a state' do
+          expect(Card.unscoped.find(annotation.id).attributes.slice('type', 'state_id'))
+            .to eq('type' => Card::Annotation.name, 'state_id' => state.id)
+          expect(project.reload.states_count).to eq 1
+        end
       end
     end
   end
